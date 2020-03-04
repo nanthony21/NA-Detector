@@ -34,8 +34,7 @@ class Window(QMainWindow):
     def __init__(self, camview: CameraView):
         super().__init__()
         
-        main_area = QWidget()
-        button_area = QWidget()
+
         # self.scroll_area = QScrollArea()
         self.button = QPushButton("Start Video")
         self.btn_grab = QPushButton("Grab Frame")
@@ -65,10 +64,16 @@ class Window(QMainWindow):
         # Create layouts
         vbox = QVBoxLayout()
         hbox = QHBoxLayout()
-    
+
+        main_area = QWidget()
+        button_area = QWidget()
+
+
         # Fill Layouts
         vbox.addWidget(self.arWidget)#self.scroll_area)
         vbox.addWidget(button_area)
+        vbox.setStretch(0, 1)
+        vbox.setStretch(1,0)
         hbox.addStretch()
         hbox.addWidget(self.button)
         hbox.addWidget(self.btn_grab)
@@ -90,6 +95,10 @@ class CameraView(QLabel):
         self._cmax = None
         self.setScaledContents(True)
         self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+
+        self.timer = QTimer()
+        self.timer.timeout.connect(self._wait_for_frame)
+
         self.arr = None
         self.grab_image()
 
@@ -101,11 +110,8 @@ class CameraView(QLabel):
         self._set_pixmap_from_array(self.arr)
 
     def start_video(self):
-        timer = QTimer()
-        self.timer = timer
-        timer.timeout.connect(self._wait_for_frame)
         self.camera.start_live_video()
-        timer.start(0)  # Run full throttle
+        self.timer.start(0)  # Run full throttle
 
     def stop_video(self):
         self.timer.stop()
