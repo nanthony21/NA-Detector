@@ -6,10 +6,11 @@ A very simple GUI that uses a CameraView to view live video from a camera.
 from __future__ import annotations
 import sys
 
+from PyQt5 import QtGui
 from PyQt5.QtCore import QTimer
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QScrollArea, QPushButton,
-                             QVBoxLayout, QHBoxLayout, QLabel)
+                             QVBoxLayout, QHBoxLayout, QLabel, QSizePolicy, QWIDGETSIZE_MAX)
 from instrumental import instrument, list_instruments
 import numpy as np
 import scipy
@@ -35,12 +36,15 @@ class Window(QMainWindow):
         
         main_area = QWidget()
         button_area = QWidget()
-        self.scroll_area = QScrollArea()
+        # self.scroll_area = QScrollArea()
         self.button = QPushButton("Start Video")
         self.btn_grab = QPushButton("Grab Frame")
         
-        self.scroll_area.setWidget(camview)
-        
+        # self.scroll_area.setWidget(camview)
+        self.arWidget = AspectRatioWidget(camview.arr.shape[1]/camview.arr.shape[0], self)
+        self.arWidget.setLayout(QVBoxLayout())
+        self.arWidget.layout().addWidget(camview)
+
         self.button.running=False
         def start_stop():
             if not self.button.running:
@@ -63,7 +67,7 @@ class Window(QMainWindow):
         hbox = QHBoxLayout()
     
         # Fill Layouts
-        vbox.addWidget(self.scroll_area)
+        vbox.addWidget(self.arWidget)#self.scroll_area)
         vbox.addWidget(button_area)
         hbox.addStretch()
         hbox.addWidget(self.button)
@@ -72,22 +76,29 @@ class Window(QMainWindow):
         # Assign layouts to widgets
         main_area.setLayout(vbox)
         button_area.setLayout(hbox)
-        self.scroll_area.setLayout(QVBoxLayout())
+        # self.scroll_area.setLayout(QVBoxLayout())
     
         # Attach some child widgets directly
         self.setCentralWidget(main_area)
 
 
 class CameraView(QLabel):
-    def __init__(self, camera=None):
+    def __init__(self, camera):
         super(CameraView, self).__init__()
         self.camera = camera
         self._cmin = 0
         self._cmax = None
+        self.setScaledContents(True)
+        self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+        self.arr = None
+        self.grab_image()
+
+    def mousePressEvent(self, ev: QtGui.QMouseEvent) -> None:
+        a = 1
 
     def grab_image(self):
-        arr = self.camera.grab_image()
-        self._set_pixmap_from_array(arr)
+        self.arr = self.camera.grab_image()
+        self._set_pixmap_from_array(self.arr)
 
     def start_video(self):
         timer = QTimer()
@@ -104,47 +115,68 @@ class CameraView(QLabel):
         bpl = arr.strides[0]
         is_rgb = len(arr.shape) == 3
 
-        if is_rgb and arr.dtype == np.uint8:
-            format = QImage.Format_RGB32
-            image = QImage(arr.data, self.camera.width, self.camera.height, bpl, format)
-        elif not is_rgb and arr.dtype == np.uint8:
-            # TODO: Somehow need to make sure data is ordered as I'm assuming
-            format = QImage.Format_Indexed8
-            image = QImage(arr.data, self.camera.width, self.camera.height, bpl, format)
-            self._saved_img = arr
-        elif not is_rgb and arr.dtype == np.uint16:
-            if not self._cmax:
-                self._cmax = arr.max()  # Set cmax once from first image
-            arr = scipy.misc.bytescale(arr, self._cmin, self._cmax)
-            format = QImage.Format_Indexed8
-            w, h = self.camera.width, self.camera.height
-            image = QImage(arr.data, w, h, w, format)
-            self._saved_img = arr  # Save a reference to keep Qt from crashing
+        if is_rgb:
+            if arr.dtype == np.uint8:
+                fmt = QImage.Format_RGB32
+            elif arr.dtype == np.uint16:
+                if not self._cmax:
+                    self._cmax = arr.max()  # Set cmax once from first image
+                arr = scipy.misc.bytescale(arr, self._cmin, self._cmax)
+                fmt = QImage.Format_Indexed8
+            else:
+                raise Exception("Unsupported color mode")
         else:
-            raise Exception("Unsupported color mode")
+            if arr.dtype == np.uint8:
+                fmt = QImage.Format_Indexed8
+            else:
+                raise Exception("Unsupported color mode")
+        self._saved_img = arr  # Save a reference to keep Qt from crashing
+        image = QImage(arr.data, self.camera.width, self.camera.height, bpl, fmt)
 
         self.setPixmap(QPixmap.fromImage(image))
-        pixmap_size = self.pixmap().size()
-        if pixmap_size != self.size():
-            self.setMinimumSize(self.pixmap().size())
 
     def _wait_for_frame(self):
         frame_ready = self.camera.wait_for_frame(timeout='0 ms')
         if frame_ready:
-            arr = self.camera.latest_frame(copy=False)
-            self._set_pixmap_from_array(arr)
+            self.arr = self.camera.latest_frame(copy=False)
+            self._set_pixmap_from_array(self.arr)
 
-    def set_height(self, h):
-        """ Sets the height while keeping the image aspect ratio fixed """
-        self.setScaledContents(True)
-        cam = self.camera
-        self.setFixedSize(cam.width*h/cam.height, h)
+    # def set_height(self, h):
+    #     """ Sets the height while keeping the image aspect ratio fixed """
+    #     cam = self.camera
+    #     self.setFixedSize(cam.width*h/cam.height, h)
+    #
+    # def set_width(self, w):
+    #     """ Sets the width while keeping the image aspect ratio fixed """
+    #     cam = self.camera
+    #     self.setFixedSize(w, cam.height*w/cam.width)
 
-    def set_width(self, w):
-        """ Sets the width while keeping the image aspect ratio fixed """
-        self.setScaledContents(True)
-        cam = self.camera
-        self.setFixedSize(w, cam.height*w/cam.width)
+# class CircleOverlayCameraView(CameraView):
+
+
+class AspectRatioWidget(QWidget):
+    def __init__(self, aspect: float, parent: QWidget = None):
+        super().__init__(parent)
+        self._aspect = aspect
+
+    def resizeEvent(self, event: QtGui.QResizeEvent):
+        w, h = event.size().width(), event.size().height()
+        self._resize(w, h)
+
+    def _resize(self, width, height):
+        newHeight = width / self._aspect #The ideal height based on the new commanded width
+        newWidth = height * self._aspect #the ideal width based on the new commanded height
+        #Now determine which of the new dimensions to use.
+        if width > newWidth:
+            self.setMaximumWidth(newWidth)
+            self.setMaximumHeight(QWIDGETSIZE_MAX)
+        else:
+            self.setMaximumHeight(newHeight)
+            self.setMaximumWidth(QWIDGETSIZE_MAX)
+
+    def setAspect(self, aspect: float):
+        self._aspect = aspect
+        self._resize(self.width(), self.height())
 
 if __name__ == '__main__':
     inst = list_instruments()
