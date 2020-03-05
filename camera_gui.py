@@ -5,7 +5,10 @@ A very simple GUI that uses a CameraView to view live video from a camera.
 """
 from __future__ import annotations
 import sys
+from queue import Queue
+from threading import Thread
 
+import skimage
 from PyQt5 import QtGui
 from PyQt5.QtCore import QTimer
 from PyQt5.QtGui import QImage, QPixmap
@@ -14,8 +17,11 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QScrollArea, QP
 from instrumental import instrument, list_instruments
 import numpy as np
 import scipy
+from analysis import fitCircle
 
 import os
+
+from analysis import fitCircleTest
 
 os.environ['PATH'] += os.path.abspath('lib')
 
@@ -25,7 +31,7 @@ class App(QApplication):
         super().__init__(argv)
 
         self.camera = camera
-        self.camview = CameraView(camera)
+        self.camview =  CircleOverlayCameraView(camera)
         self.window = Window(self.camview)
         self.window.show()
 
@@ -44,7 +50,7 @@ class Window(QMainWindow):
         self.arWidget.setLayout(QVBoxLayout())
         self.arWidget.layout().addWidget(camview)
 
-        self.button.running=False
+        self.button.running = False
         def start_stop():
             if not self.button.running:
                 camview.start_video()
@@ -105,8 +111,12 @@ class CameraView(QLabel):
     def mousePressEvent(self, ev: QtGui.QMouseEvent) -> None:
         a = 1
 
+    def processImage(self, im: np.ndarray) -> np.ndarray:
+        return im #This class is to be overridden by inheriting classes.
+
     def grab_image(self):
         self.arr = self.camera.grab_image()
+        self.arr = self.processImage(self.arr)
         self._set_pixmap_from_array(self.arr)
 
     def start_video(self):
@@ -123,7 +133,7 @@ class CameraView(QLabel):
 
         if is_rgb:
             if arr.dtype == np.uint8:
-                fmt = QImage.Format_RGB32
+                fmt = QImage.Format_RGB888
             elif arr.dtype == np.uint16:
                 if not self._cmax:
                     self._cmax = arr.max()  # Set cmax once from first image
@@ -145,20 +155,45 @@ class CameraView(QLabel):
         frame_ready = self.camera.wait_for_frame(timeout='0 ms')
         if frame_ready:
             self.arr = self.camera.latest_frame(copy=False)
+            self.arr = self.processImage(self.arr)
             self._set_pixmap_from_array(self.arr)
 
-    # def set_height(self, h):
-    #     """ Sets the height while keeping the image aspect ratio fixed """
-    #     cam = self.camera
-    #     self.setFixedSize(cam.width*h/cam.height, h)
-    #
-    # def set_width(self, w):
-    #     """ Sets the width while keeping the image aspect ratio fixed """
-    #     cam = self.camera
-    #     self.setFixedSize(w, cam.height*w/cam.width)
 
-# class CircleOverlayCameraView(CameraView):
+class CircleOverlayCameraView(CameraView):
+    def __init__(self, camera):
+        self.overlay = None
+        self.overlayQ = Queue(maxsize=1)
+        self.overlayThread = None
+        super().__init__(camera)
 
+
+    @staticmethod
+    def fitTheCircle(q, im):
+        x0, y0, r = fitCircle(im)
+        x = np.linspace(0, im.shape[1]-1, num=im.shape[1])
+        y = np.linspace(0, im.shape[0]-1, num=im.shape[0])
+        X,Y = np.meshgrid(x, y)
+        R = np.sqrt(X**2 + Y**2)
+        q.put(np.logical_and(R>r-1, R<r+1))
+
+    def processImage(self, im: np.ndarray) -> np.ndarray:
+        if self.overlayThread is None:
+            self.overlayThread = Thread(target=self.fitTheCircle, args=(self.overlayQ, im))
+            self.overlayThread.start()
+        else:
+            if not self.overlayThread.is_alive():
+                self.overlayThread = Thread(target=self.fitTheCircle, args=(self.overlayQ, im))
+                self.overlayThread.start()
+
+        if not self.overlayQ.empty():
+            self.overlay = self.overlayQ.get()
+
+        newim = np.ones((im.shape[0], im.shape[1], 3), dtype=np.uint8)
+        newim *= im[:, :, None] # Convert to RGB
+        if self.overlay is not None:
+            newim[self.overlay,:] = np.array([255, 0, 0])
+
+        return newim
 
 class AspectRatioWidget(QWidget):
     def __init__(self, aspect: float, parent: QWidget = None):
