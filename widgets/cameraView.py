@@ -12,7 +12,8 @@ from PyQt5.QtGui import QImage, QPixmap, QPainter, QPen, QBrush
 from PyQt5.QtWidgets import QLabel, QSizePolicy
 
 from abc import ABC, abstractmethod
-from analysis import binarizeImage, initialGuessCircle, fitCircle
+from analysis import binarizeImage, initialGuessCircle, fitCircle, fitCircleHough, detectEdges
+from constants import Methods
 
 
 class CameraView(QLabel):
@@ -96,22 +97,30 @@ class CircleOverlayCameraView(CameraView):
         self.preoptCoords = None
         self.fitQ = Queue(maxsize=1)
         self.fitThread = None
-        self.displayBinary = False
+        self.displayPreProcessed = False
         self.fitOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QtCore.Qt.red, 0, 0, 0)
         self.preOptFitOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QtCore.Qt.darkBlue, 0, 0, 0)
         self.fitOverlay.active = True
 
+        self.method = Methods.Minimization
+
         self._overlays: List[Overlay] = [self.fitOverlay, self.preOptFitOverlay]
         super().__init__(camera)
 
-    @staticmethod
-    def measureCircle(q: Queue, im):
-        binar = binarizeImage(im)
-        x0, y0, r0 = initialGuessCircle(binar)
-        x, y, r = fitCircle(binar, x0, y0, r0)
+    def measureCircle(self, q: Queue, im):
+        if self.method == Methods.Minimization:
+            binar = binarizeImage(im)
+            x0, y0, r0 = initialGuessCircle(binar)
+            x, y, r = fitCircle(binar, x0, y0, r0)
+        elif self.method == Methods.HoughTransform:
+            edges = detectEdges(im)
+            x, y, r = fitCircleHough(edges)
+            x0, y0, r0 = x, y, r # We don't have an initial guess in this case
+        else:
+            raise ValueError("No recognized method")
         if not q.empty():
-            _ = q.get() #Clear the queue
-        q.put(((x0, y0, r0), (x, y, r)), False) #This will raise an exception if the queue doesn't have room
+            _ = q.get()  # Clear the queue
+        q.put(((x0, y0, r0), (x, y, r)), False)  # This will raise an exception if the queue doesn't have room
 
     def processImage(self, im: np.ndarray, block=False) -> np.ndarray:
         if self.fitThread is None:
@@ -128,9 +137,15 @@ class CircleOverlayCameraView(CameraView):
         if not self.fitQ.empty():
             self.preoptCoords, self.fitCoords = self.fitQ.get()
 
-        if self.displayBinary:
-            binary = binarizeImage(im)
-            newim = binary.astype(np.uint8) * 255
+        if self.displayPreProcessed:
+            if self.method == Methods.Minimization:
+                binary = binarizeImage(im)
+                newim = binary.astype(np.uint8) * 255
+            elif self.method == Methods.HoughTransform:
+                edges = detectEdges(im)
+                newim = edges.astype(np.uint8) * 255
+            else:
+                raise ValueError("Unrecognized method")
         else:
             newim = im  # Convert to RGB
         return newim

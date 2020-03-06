@@ -28,7 +28,7 @@ class TestCamera:
     def _getFrame(self):
         y = random.randrange(self.arrayShape[0]//4, self.arrayShape[0]//2)
         x = random.randrange(self.arrayShape[1]//4, self.arrayShape[1]//2)
-        r = 200
+        r = random.randrange(50, 200)
 
         coords = skimage.draw.circle(y, x, r, shape=self.arrayShape)
         im = np.zeros(self.arrayShape, dtype=np.uint8)
