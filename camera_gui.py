@@ -8,22 +8,21 @@ import sys
 from queue import Queue
 from threading import Thread
 
-import skimage
 from PyQt5 import QtGui
 from PyQt5  import QtCore
 from PyQt5.QtCore import QTimer
 from PyQt5.QtGui import QImage, QPixmap, QPainter
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QScrollArea, QPushButton,
-                             QVBoxLayout, QHBoxLayout, QLabel, QSizePolicy, QWIDGETSIZE_MAX, QCheckBox)
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QPushButton,
+                             QVBoxLayout, QHBoxLayout, QLabel, QSizePolicy, QCheckBox)
 from instrumental import instrument, list_instruments
 import numpy as np
 import scipy
-from analysis import fitCircle, binarizeImage
+from analysis import fitCircle, binarizeImage, initialGuessCircle
 
 import os
 
-from analysis import fitCircleTest
 from hardware import TestCamera
+from widgets import AspectRatioWidget
 
 os.environ['PATH'] += os.path.abspath('lib')
 
@@ -43,12 +42,10 @@ class Window(QMainWindow):
         super().__init__()
         
 
-        # self.scroll_area = QScrollArea()
         self.button = QPushButton("Start Video")
         self.btn_grab = QPushButton("Grab Frame")
         
-        # self.scroll_area.setWidget(camview)
-        self.arWidget = AspectRatioWidget(camview.arr.shape[1]/camview.arr.shape[0], self)
+        self.arWidget = AspectRatioWidget(camview.arr.shape[1] / camview.arr.shape[0], self)
         self.arWidget.setLayout(QVBoxLayout())
         self.arWidget.layout().addWidget(camview)
 
@@ -70,8 +67,14 @@ class Window(QMainWindow):
         self.btn_grab.clicked.connect(grab)
 
         self.viewBinary = QCheckBox("View Binary Image:", self)
+        self.viewBinary.setLayoutDirection(QtCore.Qt.RightToLeft) #Put label on left side of box
         self.viewBinary.stateChanged.connect(lambda: camview.displayBinary(self.viewBinary.isChecked()))
         self.viewBinary.setChecked(camview.isDisplayBinary())
+
+        self.viewPreOpt = QCheckBox("View initial guess:", self)
+        self.viewPreOpt.setLayoutDirection(QtCore.Qt.RightToLeft) #Put label on left side of box
+        self.viewPreOpt.stateChanged.connect(lambda: camview.displayInitialGuess(self.viewPreOpt.isChecked()))
+        self.viewPreOpt.setChecked(camview.isDisplayInitialGuess())
     
         # Create layouts
         vbox = QVBoxLayout()
@@ -90,6 +93,7 @@ class Window(QMainWindow):
         hbox.addWidget(self.button)
         hbox.addWidget(self.btn_grab)
         hbox.addWidget(self.viewBinary)
+        hbox.addWidget(self.viewPreOpt)
     
         # Assign layouts to widgets
         main_area.setLayout(vbox)
@@ -108,8 +112,6 @@ class CameraView(QLabel):
         self._cmin = 0
         self._cmax = None
         self.setScaledContents(True)
-        # self.setFixedSize(camera.width, camera.height)
-        # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         self.setMinimumSize(50,50)
         self.timer = QTimer()
@@ -178,9 +180,11 @@ class CameraView(QLabel):
 class CircleOverlayCameraView(CameraView):
     def __init__(self, camera):
         self.fitCoords = None
+        self.preoptCoords = None
         self.overlayQ = Queue(maxsize=1)
         self.overlayThread = None
         self.displayOverlay = True
+        self._displayPreOpt = False
         self._displayBinary = False
         super().__init__(camera)
 
@@ -191,17 +195,20 @@ class CircleOverlayCameraView(CameraView):
     def displayBinary(self, binary: bool):
         self._displayBinary = binary
 
+    def isDisplayInitialGuess(self):
+        return self._displayPreOpt
+
+    def displayInitialGuess(self, binary: bool):
+        self._displayPreOpt = binary
+
     @staticmethod
     def generateOverlay(q: Queue, im):
         binar = binarizeImage(im)
-        x0, y0, r = fitCircle(binar)
-        # x = np.linspace(0, im.shape[1]-1, num=im.shape[1]) - x0
-        # y = np.linspace(0, im.shape[0]-1, num=im.shape[0]) - y0
-        # X, Y = np.meshgrid(x, y)
-        # R = np.sqrt(X**2 + Y**2)
+        x0, y0, r0 = initialGuessCircle(binar)
+        x, y, r = fitCircle(binar, x0, y0, r0)
         if not q.empty():
             _ = q.get() #Clear the queue
-        q.put((x0,y0,r), False) #This will raise an exception if the queue doesn't have room
+        q.put(((x0, y0, r0), (x, y, r)), False) #This will raise an exception if the queue doesn't have room
 
     def processImage(self, im: np.ndarray, block=False) -> np.ndarray:
         if self.overlayThread is None:
@@ -216,9 +223,8 @@ class CircleOverlayCameraView(CameraView):
             self.overlayThread.join()
 
         if not self.overlayQ.empty():
-            self.fitCoords = self.overlayQ.get()
+            self.preoptCoords, self.fitCoords = self.overlayQ.get()
 
-        # newim = np.ones((im.shape[0], im.shape[1], 3), dtype=np.uint8)
         if self._displayBinary:
             binary = binarizeImage(im)
             newim = binary.astype(np.uint8) * 255
@@ -227,39 +233,21 @@ class CircleOverlayCameraView(CameraView):
         return newim
 
     def processPixmap(self):
+        pm = self.pixmap()
         if self.fitCoords is not None and self.displayOverlay:
             x, y, r = self.fitCoords
-            pm = self.pixmap()
             painter = QPainter(pm)
             # painter.setBrush(QtCore.Qt.red) #This is the fill
             painter.setPen(QtCore.Qt.red)
             painter.drawEllipse(x-r, y-r, r*2, r*2)
-            self.setPixmap(pm)
+        if self.preoptCoords is not None and self._displayPreOpt:
+            x,y,r = self.preoptCoords
+            painter = QPainter(pm)
+            painter.setPen(QtCore.Qt.blue)
+            painter.drawEllipse(x - r, y - r, r * 2, r * 2)
 
+        self.setPixmap(pm)
 
-class AspectRatioWidget(QWidget):
-    def __init__(self, aspect: float, parent: QWidget = None):
-        super().__init__(parent)
-        self._aspect = aspect
-
-    def resizeEvent(self, event: QtGui.QResizeEvent):
-        w, h = event.size().width(), event.size().height()
-        self._resize(w, h)
-
-    def _resize(self, width, height):
-        newHeight = width / self._aspect #The ideal height based on the new commanded width
-        newWidth = height * self._aspect #the ideal width based on the new commanded height
-        #Now determine which of the new dimensions to use.
-        if width > newWidth:
-            self.setMaximumWidth(newWidth)
-            self.setMaximumHeight(QWIDGETSIZE_MAX)
-        else:
-            self.setMaximumHeight(newHeight)
-            self.setMaximumWidth(QWIDGETSIZE_MAX)
-
-    def setAspect(self, aspect: float):
-        self._aspect = aspect
-        self._resize(self.width(), self.height())
 
 if __name__ == '__main__':
     test = True

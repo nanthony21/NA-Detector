@@ -19,12 +19,14 @@ def binarizeImage(im: np.ndarray) -> np.ndarray:
     binar = im > thresh
     return binar
 
-def fitCircle(binar: np.ndarray) -> Tuple[float, float, float]:
-    regions = sk.measure.regionprops(binar.astype(np.uint8))
-    bubble = regions[0] #this will be the largest detected region.
+def initialGuessCircle(binary: np.ndarray):
+    regions = sk.measure.regionprops(binary.astype(np.uint8))
+    bubble = regions[0]  # this will be the largest detected region.
     y0, x0 = bubble.centroid
-    r0 = bubble.major_axis_length / 2 #These are our initial values that we will start our optimization with.
-            
+    r0 = bubble.major_axis_length / 2  # These are our initial values that we will start our optimization with.
+    return x0, y0, r0
+
+def fitCircle(binar: np.ndarray, x0, y0, r0) -> Tuple[float, float, float]:
     def cost(args: (float, float, float)): #We have to use args here rather than individual arguments because of out the sp.optimize function works. the binarized image is included in the function using closure.
         """Calculate the cost to be minimized which in this case is the negative of the number of pixels that overlap between our circle(x,y,r) and the binary image."""
         x, y, r = args
