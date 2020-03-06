@@ -78,7 +78,6 @@ class Window(QMainWindow):
         button_area = QWidget()
         button_area.setLayout(QHBoxLayout())
         fittingWidget = FittingWidget(self)
-        # fittingWidget.setStyleSheet("background-color: yellow")
 
 
         # Fill Layouts
@@ -101,6 +100,9 @@ class Window(QMainWindow):
 class FittingWidget(QWidget):
     def __init__(self, parent: Window = None):
         super().__init__(parent)
+
+        self._naPerPix = 0
+
         self.objectiveD = QSpinBox(self)
         self.objectiveNA = QDoubleSpinBox(self)
         self.measureObjectiveButton = QPushButton("Measure Objective Diameter", self)
@@ -109,9 +111,44 @@ class FittingWidget(QWidget):
         self.drawTargetButton = QPushButton("Draw Target Aperture", self)
         self.measureTargetButton = QPushButton("Measure Target Diameter", self)
 
+        #configure limits
+        for i in [self.objectiveD, self.targetD]:
+            i.setMinimum(0)
+            i.setMaximum(100000000)
+
+        for i in [self.objectiveNA, self.targetNA]:
+            i.setMaximum(100000000)
+            i.setMinimum(0)
+            i.setSingleStep(0.1)
+
+
+
         def measTarg():
-            parent.c
+            x, y, r = parent.cameraView.fitCoords
+            self.targetD.setValue(r*2)
         self.measureTargetButton.released.connect(measTarg)
+
+        def targChanged():
+            self.targetNA.setValue(self._naPerPix * self.targetD.value())
+        self.targetD.valueChanged.connect(targChanged)
+
+
+        def objChanged():
+            d = self.objectiveD.value()
+            if d!=0:
+                self._naPerPix = self.objectiveNA.value() / d
+            targChanged()
+        self.objectiveNA.valueChanged.connect(objChanged)
+        self.objectiveD.valueChanged.connect(objChanged)
+
+        def measObj():
+            x, y, r = parent.cameraView.fitCoords
+            self.objectiveD.setValue(r*2)
+        self.measureObjectiveButton.released.connect(measObj)
+
+        def drawTarg():
+            pass
+        self.drawTargetButton.released.connect(drawTarg)
 
         l = QVBoxLayout()
         l.setAlignment(QtCore.Qt.AlignTop)
