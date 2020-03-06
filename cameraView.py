@@ -36,7 +36,7 @@ class CameraView(QLabel):
         self.processPixmap()
 
     def processImage(self, im: np.ndarray, **kwargs) -> np.ndarray:
-        return im #This class is to be overridden by inheriting classes.
+        return im  # This class is to be overridden by inheriting classes.
 
     def grab_image(self):
         self.arr = self.camera.grab_image()
@@ -94,26 +94,15 @@ class CircleOverlayCameraView(CameraView):
     def __init__(self, camera):
         self.fitCoords = None
         self.preoptCoords = None
-        self.overlayQ = Queue(maxsize=1)
-        self.overlayThread = None
-        self.displayOverlay = True
-        self._displayPreOpt = False
-        self._displayBinary = False
-        self._painters: List[Overlay] = []
+        self.fitQ = Queue(maxsize=1)
+        self.fitThread = None
+        self.displayBinary = False
+        self.fitOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QtCore.Qt.red, 0, 0, 0)
+        self.preOptFitOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QtCore.Qt.darkBlue, 0, 0, 0)
+        self.fitOverlay.active = True
+
+        self._overlays: List[Overlay] = [self.fitOverlay, self.preOptFitOverlay]
         super().__init__(camera)
-
-
-    def isDisplayBinary(self):
-        return self._displayBinary
-
-    def displayBinary(self, binary: bool):
-        self._displayBinary = binary
-
-    def isDisplayInitialGuess(self):
-        return self._displayPreOpt
-
-    def displayInitialGuess(self, binary: bool):
-        self._displayPreOpt = binary
 
     @staticmethod
     def measureCircle(q: Queue, im):
@@ -125,21 +114,21 @@ class CircleOverlayCameraView(CameraView):
         q.put(((x0, y0, r0), (x, y, r)), False) #This will raise an exception if the queue doesn't have room
 
     def processImage(self, im: np.ndarray, block=False) -> np.ndarray:
-        if self.overlayThread is None:
-            self.overlayThread = Thread(target=self.measureCircle, args=(self.overlayQ, im))
-            self.overlayThread.start()
+        if self.fitThread is None:
+            self.fitThread = Thread(target=self.measureCircle, args=(self.fitQ, im))
+            self.fitThread.start()
         else:
-            if not self.overlayThread.is_alive():
-                self.overlayThread = Thread(target=self.measureCircle, args=(self.overlayQ, im))
-                self.overlayThread.start()
+            if not self.fitThread.is_alive():
+                self.fitThread = Thread(target=self.measureCircle, args=(self.fitQ, im))
+                self.fitThread.start()
 
         if block:
-            self.overlayThread.join()
+            self.fitThread.join()
 
-        if not self.overlayQ.empty():
-            self.preoptCoords, self.fitCoords = self.overlayQ.get()
+        if not self.fitQ.empty():
+            self.preoptCoords, self.fitCoords = self.fitQ.get()
 
-        if self._displayBinary:
+        if self.displayBinary:
             binary = binarizeImage(im)
             newim = binary.astype(np.uint8) * 255
         else:
@@ -149,25 +138,22 @@ class CircleOverlayCameraView(CameraView):
     def processPixmap(self):
         pm = self.pixmap()
         painter = QPainter(pm)
-        if self.fitCoords is not None and self.displayOverlay:
+        if self.fitCoords is not None:
             x, y, r = self.fitCoords
-            # painter.setBrush(QtCore.Qt.red) #This is the fill
-            painter.setPen(QtCore.Qt.red)
-            painter.drawEllipse(x-r, y-r, r*2, r*2)
-        if self.preoptCoords is not None and self._displayPreOpt:
-            x,y,r = self.preoptCoords
-            painter.setPen(QtCore.Qt.blue)
-            painter.drawEllipse(x - r, y - r, r * 2, r * 2)
-        for overlay in self._painters:
+            self.fitOverlay.setCoords(x, y, r)
+        if self.preoptCoords is not None:
+            x, y, r = self.preoptCoords
+            self.preOptFitOverlay.setCoords(x, y, r)
+        for overlay in self._overlays:
             if overlay.active:
                 overlay.draw(painter)
         self.setPixmap(pm)
 
     def addOverlay(self, overlay: Overlay):
-        self._painters.append(overlay)
+        self._overlays.append(overlay)
 
     def removeOverlay(self, overlay: Overlay):
-        self._painters.remove(overlay)
+        self._overlays.remove(overlay)
 
 class Overlay(ABC):
     def __init__(self, brush, pen):
@@ -183,6 +169,11 @@ class Overlay(ABC):
 class CircleOverlay(Overlay):
     def __init__(self, brush, pen, x, y, r):
         super().__init__(brush, pen)
+        self.x = x
+        self.y = y
+        self.r = r
+
+    def setCoords(self, x, y, r):
         self.x = x
         self.y = y
         self.r = r

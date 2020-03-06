@@ -108,17 +108,18 @@ class FittingWidget(QWidget):
         self.objectiveNA = QDoubleSpinBox(self)
         self.objectiveX = QDoubleSpinBox(self)
         self.objectiveY = QDoubleSpinBox(self)
-        self.measureObjectiveButton = QPushButton("Measure Objective Diameter", self)
+        self.measureObjectiveButton = QPushButton("Measure Objective Aperture", self)
         self.targetD = QDoubleSpinBox(self)
         self.targetNA = QDoubleSpinBox(self)
         self.drawTargetButton = QPushButton("Draw Target Aperture", self)
-        self.measureTargetButton = QPushButton("Measure Diameter", self)
+        self.measureTargetButton = QPushButton("Measure Aperture", self)
 
         self.objectiveOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QtCore.Qt.blue, 0, 0, 0)
         self.measuredOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QtCore.Qt.green, 0, 0, 0)
-        self.targetOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QtCore.Qt.darkYellow, 0, 0, 0)
+        self.targetOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QtCore.Qt.cyan, 0, 0, 0)
         parent.cameraView.addOverlay(self.objectiveOverlay)
         parent.cameraView.addOverlay(self.measuredOverlay)
+        parent.cameraView.addOverlay(self.targetOverlay)
 
         #configure limits
         for i in [self.objectiveD, self.targetD, self.objectiveX, self.objectiveY]:
@@ -131,18 +132,17 @@ class FittingWidget(QWidget):
             i.setMinimum(0)
             i.setSingleStep(0.1)
 
-
-
         def measTarg():
             x, y, r = parent.cameraView.fitCoords
+            self._measCenter = (x, y)
             self.targetD.setValue(r*2)
         self.measureTargetButton.released.connect(measTarg)
 
         def targChanged():
             self.targetNA.setValue(self._naPerPix * self.targetD.value())
             self.measuredOverlay.active = True
-            self.measuredOverlay.x = self._objCenter[0]
-            self.measuredOverlay.y = self._objCenter[1]
+            self.measuredOverlay.x = self._measCenter[0]
+            self.measuredOverlay.y = self._measCenter[1]
             self.measuredOverlay.r = self.targetD.value() / 2
             if not parent.cameraView.isRunning:
                 parent.cameraView.refresh()
@@ -159,7 +159,6 @@ class FittingWidget(QWidget):
             self.objectiveOverlay.y = self._objCenter[1]
             self.objectiveOverlay.r = d/2
             targChanged()
-
         self.objectiveNA.valueChanged.connect(objChanged)
         self.objectiveD.valueChanged.connect(objChanged)
         self.objectiveX.valueChanged.connect(objChanged)
@@ -226,13 +225,17 @@ class AdvancedDialog(QDialog):
 
         self.viewBinary = QCheckBox("View Binary Image:", self)
         self.viewBinary.setLayoutDirection(QtCore.Qt.RightToLeft)  # Put label on left side of box
-        self.viewBinary.stateChanged.connect(lambda: camview.displayBinary(self.viewBinary.isChecked()))
-        self.viewBinary.setChecked(camview.isDisplayBinary())
+        def setBinary():
+            camview.displayBinary = self.viewBinary.isChecked()
+        self.viewBinary.stateChanged.connect(setBinary)
+        self.viewBinary.setChecked(camview.displayBinary)
 
         self.viewPreOpt = QCheckBox("View initial guess:", self)
         self.viewPreOpt.setLayoutDirection(QtCore.Qt.RightToLeft)  # Put label on left side of box
-        self.viewPreOpt.stateChanged.connect(lambda: camview.displayInitialGuess(self.viewPreOpt.isChecked()))
-        self.viewPreOpt.setChecked(camview.isDisplayInitialGuess())
+        def viewPreOpt():
+            camview.preOptFitOverlay.active = self.viewPreOpt.isChecked()
+        self.viewPreOpt.stateChanged.connect(viewPreOpt)
+        self.viewPreOpt.setChecked(camview.preOptFitOverlay.active)
 
         layout = QVBoxLayout()
         layout.addWidget(self.viewBinary)
