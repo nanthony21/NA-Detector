@@ -22,6 +22,7 @@ from analysis import fitCircle, binarizeImage
 import os
 
 from analysis import fitCircleTest
+from hardware import TestCamera
 
 os.environ['PATH'] += os.path.abspath('lib')
 
@@ -31,7 +32,7 @@ class App(QApplication):
         super().__init__(argv)
 
         self.camera = camera
-        self.camview =  CircleOverlayCameraView(camera)
+        self.camview = CircleOverlayCameraView(camera)
         self.window = Window(self.camview)
         self.window.show()
 
@@ -116,12 +117,12 @@ class CameraView(QLabel):
     def mousePressEvent(self, ev: QtGui.QMouseEvent) -> None:
         a = 1
 
-    def processImage(self, im: np.ndarray) -> np.ndarray:
+    def processImage(self, im: np.ndarray, **kwargs) -> np.ndarray:
         return im #This class is to be overridden by inheriting classes.
 
     def grab_image(self):
         self.arr = self.camera.grab_image()
-        self.arr = self.processImage(self.arr)
+        self.arr = self.processImage(self.arr, block=True)
         self._set_pixmap_from_array(self.arr)
 
     def start_video(self):
@@ -160,7 +161,7 @@ class CameraView(QLabel):
         frame_ready = self.camera.wait_for_frame(timeout='0 ms')
         if frame_ready:
             self.arr = self.camera.latest_frame(copy=False)
-            self.arr = self.processImage(self.arr)
+            self.arr = self.processImage(self.arr, block=False)
             self._set_pixmap_from_array(self.arr)
 
 
@@ -181,16 +182,18 @@ class CircleOverlayCameraView(CameraView):
         self._displayBinary = binary
 
     @staticmethod
-    def generateOverlay(q, im):
+    def generateOverlay(q: Queue, im):
         binar = binarizeImage(im)
         x0, y0, r = fitCircle(binar)
         x = np.linspace(0, im.shape[1]-1, num=im.shape[1]) - x0
         y = np.linspace(0, im.shape[0]-1, num=im.shape[0]) - y0
         X, Y = np.meshgrid(x, y)
         R = np.sqrt(X**2 + Y**2)
-        q.put(np.logical_and(R>r-1, R<r+1))
+        if not q.empty():
+            _ = q.get() #Clear the queue
+        q.put(np.logical_and(R>r-1, R<r+1), False) #This will raise an exception if the queue doesn't have room
 
-    def processImage(self, im: np.ndarray) -> np.ndarray:
+    def processImage(self, im: np.ndarray, block=False) -> np.ndarray:
         if self.overlayThread is None:
             self.overlayThread = Thread(target=self.generateOverlay, args=(self.overlayQ, im))
             self.overlayThread.start()
@@ -198,6 +201,9 @@ class CircleOverlayCameraView(CameraView):
             if not self.overlayThread.is_alive():
                 self.overlayThread = Thread(target=self.generateOverlay, args=(self.overlayQ, im))
                 self.overlayThread.start()
+
+        if block:
+            self.overlayThread.join()
 
         if not self.overlayQ.empty():
             self.overlay = self.overlayQ.get()
@@ -238,12 +244,20 @@ class AspectRatioWidget(QWidget):
         self._resize(self.width(), self.height())
 
 if __name__ == '__main__':
-    inst = list_instruments()
-    print(f"Found {len(inst)} cameras:")
-    print(inst)
-    if len(inst) > 0:
-        cam = instrument(list_instruments()[0])  # Replace with your camera's alias
+    test = True
 
+    cam = None
+
+    if test:
+        cam = TestCamera((512,512), 120)
+    else:
+        inst = list_instruments()
+        print(f"Found {len(inst)} cameras:")
+        print(inst)
+        if len(inst) > 0:
+            cam = instrument(list_instruments()[0])  # Replace with your camera's alias
+
+    if cam is not None:
         with cam:
             app = App(sys.argv, cam)
             app.exec_()
