@@ -35,8 +35,8 @@ def fitCircle(binar: np.ndarray) -> Tuple[float, float, float]:
     
     result = sp.optimize.minimize(cost, x0=(x0, y0, r0))
     X, Y, R = tuple(result.x)
-    print(result.success)
-    print(X,Y,R)
+    # print(result.success)
+    # print(X,Y,R)
     return X, Y, R
 
 

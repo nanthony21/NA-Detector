@@ -10,8 +10,9 @@ from threading import Thread
 
 import skimage
 from PyQt5 import QtGui
+from PyQt5  import QtCore
 from PyQt5.QtCore import QTimer
-from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtGui import QImage, QPixmap, QPainter
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QScrollArea, QPushButton,
                              QVBoxLayout, QHBoxLayout, QLabel, QSizePolicy, QWIDGETSIZE_MAX, QCheckBox)
 from instrumental import instrument, list_instruments
@@ -97,6 +98,7 @@ class Window(QMainWindow):
     
         # Attach some child widgets directly
         self.setCentralWidget(main_area)
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
 
 
 class CameraView(QLabel):
@@ -106,13 +108,16 @@ class CameraView(QLabel):
         self._cmin = 0
         self._cmax = None
         self.setScaledContents(True)
-        self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
-
+        # self.setFixedSize(camera.width, camera.height)
+        # self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        self.setMinimumSize(50,50)
         self.timer = QTimer()
         self.timer.timeout.connect(self._wait_for_frame)
 
         self.arr = None
         self.grab_image()
+
 
     def mousePressEvent(self, ev: QtGui.QMouseEvent) -> None:
         a = 1
@@ -124,6 +129,7 @@ class CameraView(QLabel):
         self.arr = self.camera.grab_image()
         self.arr = self.processImage(self.arr, block=True)
         self._set_pixmap_from_array(self.arr)
+        self.processPixmap()
 
     def start_video(self):
         self.camera.start_live_video()
@@ -163,15 +169,19 @@ class CameraView(QLabel):
             self.arr = self.camera.latest_frame(copy=False)
             self.arr = self.processImage(self.arr, block=False)
             self._set_pixmap_from_array(self.arr)
+            self.processPixmap()
+
+    def processPixmap(self):
+        pass
 
 
 class CircleOverlayCameraView(CameraView):
     def __init__(self, camera):
-        self.overlay = None
+        self.fitCoords = None
         self.overlayQ = Queue(maxsize=1)
         self.overlayThread = None
         self.displayOverlay = True
-        self._displayBinary = True#False
+        self._displayBinary = False
         super().__init__(camera)
 
 
@@ -185,13 +195,13 @@ class CircleOverlayCameraView(CameraView):
     def generateOverlay(q: Queue, im):
         binar = binarizeImage(im)
         x0, y0, r = fitCircle(binar)
-        x = np.linspace(0, im.shape[1]-1, num=im.shape[1]) - x0
-        y = np.linspace(0, im.shape[0]-1, num=im.shape[0]) - y0
-        X, Y = np.meshgrid(x, y)
-        R = np.sqrt(X**2 + Y**2)
+        # x = np.linspace(0, im.shape[1]-1, num=im.shape[1]) - x0
+        # y = np.linspace(0, im.shape[0]-1, num=im.shape[0]) - y0
+        # X, Y = np.meshgrid(x, y)
+        # R = np.sqrt(X**2 + Y**2)
         if not q.empty():
             _ = q.get() #Clear the queue
-        q.put(np.logical_and(R>r-1, R<r+1), False) #This will raise an exception if the queue doesn't have room
+        q.put((x0,y0,r), False) #This will raise an exception if the queue doesn't have room
 
     def processImage(self, im: np.ndarray, block=False) -> np.ndarray:
         if self.overlayThread is None:
@@ -206,18 +216,26 @@ class CircleOverlayCameraView(CameraView):
             self.overlayThread.join()
 
         if not self.overlayQ.empty():
-            self.overlay = self.overlayQ.get()
+            self.fitCoords = self.overlayQ.get()
 
-        newim = np.ones((im.shape[0], im.shape[1], 3), dtype=np.uint8)
+        # newim = np.ones((im.shape[0], im.shape[1], 3), dtype=np.uint8)
         if self._displayBinary:
             binary = binarizeImage(im)
-            newim *= binary[:,:, None].astype(np.uint8) * 255
+            newim = binary.astype(np.uint8) * 255
         else:
-            newim *= im[:, :, None]  # Convert to RGB
-        if self.overlay is not None and self.displayOverlay:
-            newim[self.overlay,:] = np.array([255, 0, 0])
-
+            newim = im  # Convert to RGB
         return newim
+
+    def processPixmap(self):
+        if self.fitCoords is not None and self.displayOverlay:
+            x, y, r = self.fitCoords
+            pm = self.pixmap()
+            painter = QPainter(pm)
+            # painter.setBrush(QtCore.Qt.red) #This is the fill
+            painter.setPen(QtCore.Qt.red)
+            painter.drawEllipse(x-r, y-r, r*2, r*2)
+            self.setPixmap(pm)
+
 
 class AspectRatioWidget(QWidget):
     def __init__(self, aspect: float, parent: QWidget = None):
@@ -249,7 +267,7 @@ if __name__ == '__main__':
     cam = None
 
     if test:
-        cam = TestCamera((512,512), 120)
+        cam = TestCamera((512,1024), 10)
     else:
         inst = list_instruments()
         print(f"Found {len(inst)} cameras:")
