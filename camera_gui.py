@@ -102,19 +102,23 @@ class FittingWidget(QWidget):
         super().__init__(parent)
 
         self._naPerPix = 0
+        self._center = (0, 0)
 
-        self.objectiveD = QSpinBox(self)
+        self.objectiveD = QDoubleSpinBox(self)
         self.objectiveNA = QDoubleSpinBox(self)
+        self.objectiveX = QDoubleSpinBox(self)
+        self.objectiveY = QDoubleSpinBox(self)
         self.measureObjectiveButton = QPushButton("Measure Objective Diameter", self)
-        self.targetD = QSpinBox(self)
+        self.targetD = QDoubleSpinBox(self)
         self.targetNA = QDoubleSpinBox(self)
         self.drawTargetButton = QPushButton("Draw Target Aperture", self)
         self.measureTargetButton = QPushButton("Measure Target Diameter", self)
 
         #configure limits
-        for i in [self.objectiveD, self.targetD]:
+        for i in [self.objectiveD, self.targetD, self.objectiveX, self.objectiveY]:
             i.setMinimum(0)
             i.setMaximum(100000000)
+            i.setSingleStep(1)
 
         for i in [self.objectiveNA, self.targetNA]:
             i.setMaximum(100000000)
@@ -135,14 +139,21 @@ class FittingWidget(QWidget):
 
         def objChanged():
             d = self.objectiveD.value()
-            if d!=0:
+            if d != 0:
                 self._naPerPix = self.objectiveNA.value() / d
             targChanged()
         self.objectiveNA.valueChanged.connect(objChanged)
         self.objectiveD.valueChanged.connect(objChanged)
 
+        def objCenterChanged():
+            self._center = (self.objectiveX.value(), self.objectiveY.value())
+        self.objectiveX.valueChanged.connect(objCenterChanged)
+        self.objectiveY.valueChanged.connect(objCenterChanged)
+
         def measObj():
             x, y, r = parent.cameraView.fitCoords
+            self.objectiveX.setValue(x)
+            self.objectiveY.setValue(y)
             self.objectiveD.setValue(r*2)
         self.measureObjectiveButton.released.connect(measObj)
 
@@ -161,8 +172,11 @@ class FittingWidget(QWidget):
         gl.addWidget(QLabel("Diameter (px):"), 0, 0)
         gl.addWidget(self.objectiveD, 0, 1)
         gl.addWidget(self.measureObjectiveButton, 0, 2)
-        gl.addWidget(QLabel("NA:"), 1 ,0)
-        gl.addWidget(self.objectiveNA, 1, 1)
+        gl.addWidget(QLabel("Center (x,y):"), 1, 0)
+        gl.addWidget(self.objectiveX, 1, 1)
+        gl.addWidget(self.objectiveY, 1, 2)
+        gl.addWidget(QLabel("NA:"), 2, 0)
+        gl.addWidget(self.objectiveNA, 2, 1)
         l.addLayout(gl)
         lab = QLabel("Target:")
         f = lab.font()
