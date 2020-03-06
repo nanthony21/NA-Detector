@@ -8,13 +8,14 @@ import sys
 
 from PyQt5  import QtCore
 from PyQt5.QtCore import QPoint
+from PyQt5.QtGui import QPen, QPixmap, QPainter
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QPushButton,
                              QVBoxLayout, QHBoxLayout, QSizePolicy, QCheckBox, QDialog, QGridLayout, QFormLayout, QSpinBox, QDoubleSpinBox, QLabel)
 from instrumental import instrument, list_instruments
 
 import os
 
-from cameraView import CircleOverlayCameraView
+from cameraView import CircleOverlayCameraView, Overlay, CircleOverlay, CircleCenterOverlay
 from hardware import TestCamera
 from widgets import AspectRatioWidget
 
@@ -45,21 +46,19 @@ class Window(QMainWindow):
         self.arWidget.setLayout(QVBoxLayout())
         self.arWidget.layout().addWidget(camview)
 
-        self.button.running = False
         def start_stop():
-            if not self.button.running:
+            if not self.cameraView.isRunning:
                 camview.start_video()
                 self.button.setText("Stop Video")
-                self.button.running = True
+                self.btn_grab.setEnabled(False)
             else:
                 camview.stop_video()
                 self.button.setText("Start Video")
-                self.button.running = False
+                self.btn_grab.setEnabled(True)
         self.button.clicked.connect(start_stop)
         
         def grab():
-            if not self.button.running:
-                camview.grab_image()
+            camview.grab_image()
         self.btn_grab.clicked.connect(grab)
 
         def showAdvanced():
@@ -102,7 +101,8 @@ class FittingWidget(QWidget):
         super().__init__(parent)
 
         self._naPerPix = 0
-        self._center = (0, 0)
+        self._objCenter = (0, 0)
+        self._measCenter = (0, 0)
 
         self.objectiveD = QDoubleSpinBox(self)
         self.objectiveNA = QDoubleSpinBox(self)
@@ -112,7 +112,13 @@ class FittingWidget(QWidget):
         self.targetD = QDoubleSpinBox(self)
         self.targetNA = QDoubleSpinBox(self)
         self.drawTargetButton = QPushButton("Draw Target Aperture", self)
-        self.measureTargetButton = QPushButton("Measure Target Diameter", self)
+        self.measureTargetButton = QPushButton("Measure Diameter", self)
+
+        self.objectiveOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QtCore.Qt.blue, 0, 0, 0)
+        self.measuredOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QtCore.Qt.green, 0, 0, 0)
+        self.targetOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QtCore.Qt.darkYellow, 0, 0, 0)
+        parent.cameraView.addOverlay(self.objectiveOverlay)
+        parent.cameraView.addOverlay(self.measuredOverlay)
 
         #configure limits
         for i in [self.objectiveD, self.targetD, self.objectiveX, self.objectiveY]:
@@ -134,6 +140,12 @@ class FittingWidget(QWidget):
 
         def targChanged():
             self.targetNA.setValue(self._naPerPix * self.targetD.value())
+            self.measuredOverlay.active = True
+            self.measuredOverlay.x = self._objCenter[0]
+            self.measuredOverlay.y = self._objCenter[1]
+            self.measuredOverlay.r = self.targetD.value() / 2
+            if not parent.cameraView.isRunning:
+                parent.cameraView.refresh()
         self.targetD.valueChanged.connect(targChanged)
 
 
@@ -141,14 +153,17 @@ class FittingWidget(QWidget):
             d = self.objectiveD.value()
             if d != 0:
                 self._naPerPix = self.objectiveNA.value() / d
+            self._objCenter = (self.objectiveX.value(), self.objectiveY.value())
+            self.objectiveOverlay.active = True
+            self.objectiveOverlay.x = self._objCenter[0]
+            self.objectiveOverlay.y = self._objCenter[1]
+            self.objectiveOverlay.r = d/2
             targChanged()
+
         self.objectiveNA.valueChanged.connect(objChanged)
         self.objectiveD.valueChanged.connect(objChanged)
-
-        def objCenterChanged():
-            self._center = (self.objectiveX.value(), self.objectiveY.value())
-        self.objectiveX.valueChanged.connect(objCenterChanged)
-        self.objectiveY.valueChanged.connect(objCenterChanged)
+        self.objectiveX.valueChanged.connect(objChanged)
+        self.objectiveY.valueChanged.connect(objChanged)
 
         def measObj():
             x, y, r = parent.cameraView.fitCoords
@@ -158,7 +173,15 @@ class FittingWidget(QWidget):
         self.measureObjectiveButton.released.connect(measObj)
 
         def drawTarg():
-            pass
+            if self._naPerPix != 0:
+                self.targetOverlay.active = True
+                self.targetOverlay.x = self._objCenter[0]
+                self.targetOverlay.y = self._objCenter[1]
+                self.targetOverlay.r = self.targetNA.value() / self._naPerPix / 2
+            else:
+                self.targetOverlay.active = False
+            if not parent.cameraView.isRunning:
+                parent.cameraView.refresh()
         self.drawTargetButton.released.connect(drawTarg)
 
         l = QVBoxLayout()
@@ -193,6 +216,7 @@ class FittingWidget(QWidget):
         l.addLayout(gl)
         l.addStretch() #Causes the bottom of the layout to push the rest upwards
         self.setLayout(l)
+
 
 class AdvancedDialog(QDialog):
     def __init__(self, parent: QWidget, camview: CircleOverlayCameraView):
