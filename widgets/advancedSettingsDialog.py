@@ -11,12 +11,12 @@ class AdvancedSettingsDialog(QDialog):
         self.setWindowTitle("Advanced Settings")
         self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.WindowTitleHint | QtCore.Qt.CustomizeWindowHint | QtCore.Qt.WindowCloseButtonHint) #Get rid of the close button. this is handled by the selector widget active status
 
-        self.viewBinary = QCheckBox("View Binary Image:", self)
-        self.viewBinary.setLayoutDirection(QtCore.Qt.RightToLeft)  # Put label on left side of box
+        self.viewPreprocessed = QCheckBox("View Background Image:", self)
+        self.viewPreprocessed.setLayoutDirection(QtCore.Qt.RightToLeft)  # Put label on left side of box
         def setBinary():
-            camview.displayPreProcessed = self.viewBinary.isChecked()
-        self.viewBinary.stateChanged.connect(setBinary)
-        self.viewBinary.setChecked(camview.displayPreProcessed)
+            camview.displayPreProcessed = self.viewPreprocessed.isChecked()
+        self.viewPreprocessed.stateChanged.connect(setBinary)
+        self.viewPreprocessed.setChecked(camview.displayPreProcessed)
 
         self.viewPreOpt = QCheckBox("View initial guess:", self)
         self.viewPreOpt.setLayoutDirection(QtCore.Qt.RightToLeft)  # Put label on left side of box
@@ -34,7 +34,7 @@ class AdvancedSettingsDialog(QDialog):
         self.methodCombo.currentIndexChanged.connect(methchanged)
 
         layout = QVBoxLayout()
-        layout.addWidget(self.viewBinary)
+        layout.addWidget(self.viewPreprocessed)
         layout.addWidget(self.viewPreOpt)
         layout.addWidget(self.methodCombo)
         self.setLayout(layout)
