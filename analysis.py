@@ -13,10 +13,13 @@ import numpy as np
 import scipy as sp
 
 
-def fitCircle(im: np.ndarray) -> Tuple[float, float, float]:
-#    thresh = sk.filters.threshold_otsu(im) This wasn't always working well
+def binarizeImage(im: np.ndarray) -> np.ndarray:
+    #    thresh = sk.filters.threshold_otsu(im) This wasn't always working well
     thresh = skfilters.threshold_li(im)
     binar = im > thresh
+    return binar
+
+def fitCircle(binar: np.ndarray) -> Tuple[float, float, float]:
     regions = sk.measure.regionprops(binar.astype(np.uint8))
     bubble = regions[0] #this will be the largest detected region.
     y0, x0 = bubble.centroid
@@ -30,8 +33,10 @@ def fitCircle(im: np.ndarray) -> Tuple[float, float, float]:
         template[coords] = True
         return -(np.sum(template == binar))
     
-    result = sp.optimize.minimize(cost, x0=(x0, y0, r0), method='BFGS')
+    result = sp.optimize.minimize(cost, x0=(x0, y0, r0))
     X, Y, R = tuple(result.x)
+    print(result.success)
+    print(X,Y,R)
     return X, Y, R
 
 

@@ -13,11 +13,11 @@ from PyQt5 import QtGui
 from PyQt5.QtCore import QTimer
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QScrollArea, QPushButton,
-                             QVBoxLayout, QHBoxLayout, QLabel, QSizePolicy, QWIDGETSIZE_MAX)
+                             QVBoxLayout, QHBoxLayout, QLabel, QSizePolicy, QWIDGETSIZE_MAX, QCheckBox)
 from instrumental import instrument, list_instruments
 import numpy as np
 import scipy
-from analysis import fitCircle
+from analysis import fitCircle, binarizeImage
 
 import os
 
@@ -37,7 +37,7 @@ class App(QApplication):
 
         
 class Window(QMainWindow):
-    def __init__(self, camview: CameraView):
+    def __init__(self, camview: CircleOverlayCameraView):
         super().__init__()
         
 
@@ -66,6 +66,10 @@ class Window(QMainWindow):
             if not self.button.running:
                 camview.grab_image()
         self.btn_grab.clicked.connect(grab)
+
+        self.viewBinary = QCheckBox("View Binary Image:", self)
+        self.viewBinary.stateChanged.connect(lambda: camview.displayBinary(self.viewBinary.isChecked()))
+        self.viewBinary.setChecked(camview.isDisplayBinary())
     
         # Create layouts
         vbox = QVBoxLayout()
@@ -83,6 +87,7 @@ class Window(QMainWindow):
         hbox.addStretch()
         hbox.addWidget(self.button)
         hbox.addWidget(self.btn_grab)
+        hbox.addWidget(self.viewBinary)
     
         # Assign layouts to widgets
         main_area.setLayout(vbox)
@@ -164,33 +169,46 @@ class CircleOverlayCameraView(CameraView):
         self.overlay = None
         self.overlayQ = Queue(maxsize=1)
         self.overlayThread = None
+        self.displayOverlay = True
+        self._displayBinary = True#False
         super().__init__(camera)
 
 
+    def isDisplayBinary(self):
+        return self._displayBinary
+
+    def displayBinary(self, binary: bool):
+        self._displayBinary = binary
+
     @staticmethod
-    def fitTheCircle(q, im):
-        x0, y0, r = fitCircle(im)
-        x = np.linspace(0, im.shape[1]-1, num=im.shape[1])
-        y = np.linspace(0, im.shape[0]-1, num=im.shape[0])
-        X,Y = np.meshgrid(x, y)
+    def generateOverlay(q, im):
+        binar = binarizeImage(im)
+        x0, y0, r = fitCircle(binar)
+        x = np.linspace(0, im.shape[1]-1, num=im.shape[1]) - x0
+        y = np.linspace(0, im.shape[0]-1, num=im.shape[0]) - y0
+        X, Y = np.meshgrid(x, y)
         R = np.sqrt(X**2 + Y**2)
         q.put(np.logical_and(R>r-1, R<r+1))
 
     def processImage(self, im: np.ndarray) -> np.ndarray:
         if self.overlayThread is None:
-            self.overlayThread = Thread(target=self.fitTheCircle, args=(self.overlayQ, im))
+            self.overlayThread = Thread(target=self.generateOverlay, args=(self.overlayQ, im))
             self.overlayThread.start()
         else:
             if not self.overlayThread.is_alive():
-                self.overlayThread = Thread(target=self.fitTheCircle, args=(self.overlayQ, im))
+                self.overlayThread = Thread(target=self.generateOverlay, args=(self.overlayQ, im))
                 self.overlayThread.start()
 
         if not self.overlayQ.empty():
             self.overlay = self.overlayQ.get()
 
         newim = np.ones((im.shape[0], im.shape[1], 3), dtype=np.uint8)
-        newim *= im[:, :, None] # Convert to RGB
-        if self.overlay is not None:
+        if self._displayBinary:
+            binary = binarizeImage(im)
+            newim *= binary[:,:, None].astype(np.uint8) * 255
+        else:
+            newim *= im[:, :, None]  # Convert to RGB
+        if self.overlay is not None and self.displayOverlay:
             newim[self.overlay,:] = np.array([255, 0, 0])
 
         return newim
