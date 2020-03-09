@@ -8,7 +8,7 @@ if typing.TYPE_CHECKING:
     from mainWindow import Window
 
 
-class FittingWidget(QFrame):
+class FittingWidget(QFrame): #TODO separate current measurement from target.
     def __init__(self, parent: Window = None):
         super().__init__(parent)
         self.setFrameShape(QFrame.StyledPanel)

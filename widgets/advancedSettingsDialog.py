@@ -5,7 +5,7 @@ from constants import Methods
 from widgets.cameraView import CircleOverlayCameraView
 
 
-class AdvancedSettingsDialog(QDialog):
+class AdvancedSettingsDialog(QDialog): #TODO camera exposure (autoexposure), method specific settings (thresholding)
     def __init__(self, parent: QWidget, camview: CircleOverlayCameraView):
         super().__init__(parent)
         self.setWindowTitle("Advanced Settings")
