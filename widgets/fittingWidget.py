@@ -1,16 +1,17 @@
 from __future__ import annotations
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import QWidget, QDoubleSpinBox, QPushButton, QVBoxLayout, QLabel, QGridLayout
+from PyQt5.QtWidgets import QWidget, QDoubleSpinBox, QPushButton, QVBoxLayout, QLabel, QGridLayout, QFrame
 
 from widgets.cameraView import CircleCenterOverlay
 import typing
 if typing.TYPE_CHECKING:
-    from camera_gui import Window
+    from mainWindow import Window
 
 
-class FittingWidget(QWidget):
+class FittingWidget(QFrame):
     def __init__(self, parent: Window = None):
         super().__init__(parent)
+        self.setFrameShape(QFrame.StyledPanel)
 
         self._naPerPix = 0
         self._objCenter = (0, 0)

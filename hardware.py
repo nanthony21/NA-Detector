@@ -9,6 +9,7 @@ class TestCamera:
         self._started = False
         self.noiseLevel = noiseLevel
         self.arrayShape = shape
+        # self.lastxyr = (shape[1]//2, shape[0]//2, shape[1]//6)
 
     def grab_image(self):
         return self._getFrame()
@@ -29,6 +30,8 @@ class TestCamera:
         y = random.randrange(self.arrayShape[0]//4, self.arrayShape[0]//2)
         x = random.randrange(self.arrayShape[1]//4, self.arrayShape[1]//2)
         r = random.randrange(50, 200)
+
+        # self.lastxyr = (x,y,r)
 
         coords = skimage.draw.circle(y, x, r, shape=self.arrayShape)
         im = np.zeros(self.arrayShape, dtype=np.uint8)
