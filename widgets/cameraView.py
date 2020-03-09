@@ -107,6 +107,21 @@ class CircleOverlayCameraView(CameraView):
         self._overlays: List[Overlay] = [self.fitOverlay, self.preOptFitOverlay]
         super().__init__(camera)
 
+    def mousePressEvent(self, ev: QtGui.QMouseEvent) -> None:
+        x, y = ev.x(), ev.y()
+        pm = self.pixmap()
+        scale = self.width()/pm.width() #We assume the height scaling is the same.
+        print(scale)
+        print(x, y)
+        x /= scale
+        y /= scale
+        ov = CircleOverlay(QtCore.Qt.NoBrush, QtCore.Qt.red, x, y, 1)
+        ov.active = True
+        self.graphicsProxyWidget()
+        self.addOverlay(ov)
+
+
+
     def measureCircle(self, q: Queue, im):
         if self.method == Methods.Minimization:
             binar = binarizeImage(im)

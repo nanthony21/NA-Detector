@@ -28,7 +28,7 @@ class App(QApplication):
 
 
 if __name__ == '__main__':
-    test = False
+    test = True
 
     cam = None
     if test:
