@@ -1,7 +1,7 @@
 import random
 
-import skimage
 import numpy as np
+import skimage
 
 
 class TestCamera:
@@ -11,10 +11,10 @@ class TestCamera:
         self.arrayShape = shape
         # self.lastxyr = (shape[1]//2, shape[0]//2, shape[1]//6)
 
-    def grab_image(self):
+    def grab_image(self, **kwargs):
         return self._getFrame()
 
-    def start_live_video(self):
+    def start_live_video(self, **kwargs):
         self._started = True
 
     def stop_live_video(self):
@@ -25,6 +25,12 @@ class TestCamera:
 
     def latest_frame(self, **kwargs):
         return self._getFrame()
+
+    def set_auto_exposure(self, enable=True):
+        pass
+
+    def auto_exposure(self) -> bool:
+        return False
 
     def _getFrame(self):
         y = random.randrange(self.arrayShape[0]//4, self.arrayShape[0]//2)
