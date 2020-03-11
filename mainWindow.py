@@ -1,17 +1,21 @@
+from __future__ import annotations
 from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QMainWindow, QPushButton, QVBoxLayout, QWidget, QGridLayout, QHBoxLayout
 
+from hardware.cameraManager import CameraManager
 from widgets.advancedSettingsDialog import AdvancedSettingsDialog
 from widgets.aspectRatioWidget import AspectRatioWidget
-from widgets.cameraView import CircleOverlayCameraView
 from widgets.fittingWidget import FittingWidget
+import typing
+if typing.TYPE_CHECKING:
+    from widgets.cameraView import CircleOverlayCameraView
 
 
 class Window(QMainWindow):
-    def __init__(self, camview: CircleOverlayCameraView):
+    def __init__(self, camview: CircleOverlayCameraView, camManager: CameraManager):
         super().__init__()
         self.setWindowTitle("NA Detector")
-        self.advancedDlg = AdvancedSettingsDialog(self, camview)
+        self.advancedDlg = AdvancedSettingsDialog(self, camview, camManager)
         self.cameraView = camview
 
         self.button = QPushButton("Start Video")

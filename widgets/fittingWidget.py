@@ -1,8 +1,8 @@
 from __future__ import annotations
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QWidget, QDoubleSpinBox, QPushButton, QVBoxLayout, QLabel, QGridLayout, QFrame, QCheckBox
-
 from widgets.cameraView import CircleCenterOverlay
+
 import typing
 if typing.TYPE_CHECKING:
     from mainWindow import Window

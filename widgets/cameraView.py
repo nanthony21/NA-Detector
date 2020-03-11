@@ -1,5 +1,4 @@
 from __future__ import annotations
-from dataclasses import dataclass
 from queue import Queue
 from threading import Thread
 from typing import List
@@ -14,10 +13,13 @@ from PyQt5.QtWidgets import QLabel, QSizePolicy
 from abc import ABC, abstractmethod
 from analysis import binarizeImage, initialGuessCircle, fitCircle, fitCircleHough, detectEdges
 from constants import Methods
+import typing
+if typing.TYPE_CHECKING:
+    from hardware.cameraManager import CameraManager
 
 
 class CameraView(QLabel):
-    def __init__(self, camera):
+    def __init__(self, camera: CameraManager):
         super(CameraView, self).__init__()
         self.camera = camera
         self._cmin = 0

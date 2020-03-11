@@ -1,8 +1,6 @@
 from PyQt5.QtCore import QTimer, pyqtSignal, QObject
 from instrumental.drivers.cameras import Camera
 
-from widgets.cameraView import CameraView
-import numpy as np
 
 
 class CameraManager(QObject):
@@ -10,7 +8,7 @@ class CameraManager(QObject):
     def __init__(self, camera: Camera, parent: QObject = None):
         super().__init__(parent)
         self._cam = camera
-        self._exposure = 0
+        self._exposure = 10
         self.isRunning = False
         # self._aeTimer = QTimer()
         # self._aeTimer.setSingleShot(False)
@@ -33,6 +31,9 @@ class CameraManager(QObject):
             self.stop_live_video()
             self.start_live_video() #This is to update the exposure used.
 
+    def getExposure(self):
+        return self._exposure
+
     def grab_image(self):
         return self._cam.grab_image(exposure_time=f"{self._exposure} ms")
 
@@ -44,11 +45,11 @@ class CameraManager(QObject):
         self.isRunning = False
         return self._cam.stop_live_video()
 
-    def wait_for_frame(self):
-        return self._cam.wait_for_frame()
+    def wait_for_frame(self, **kwargs):
+        return self._cam.wait_for_frame(**kwargs)
 
-    def latest_frame(self):
-        return self._cam.latest_frame()
+    def latest_frame(self, **kwargs):
+        return self._cam.latest_frame(**kwargs)
 
     @property
     def width(self):

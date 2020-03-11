@@ -11,9 +11,10 @@ from instrumental import instrument, list_instruments
 
 import os
 
+from hardware.cameraManager import CameraManager
 from mainWindow import Window
 from widgets.cameraView import CircleOverlayCameraView
-from hardware import TestCamera
+from hardware.testCamera import TestCamera
 
 os.environ['PATH'] += os.path.abspath('lib') #This makes is so that the Camera driver DLL can be found.
 
@@ -21,9 +22,9 @@ os.environ['PATH'] += os.path.abspath('lib') #This makes is so that the Camera d
 class App(QApplication):
     def __init__(self, argv, camera):
         super().__init__(argv)
-        self.camera = camera
-        self.camview = CircleOverlayCameraView(camera)
-        self.window = Window(self.camview)
+        self.cameraManager = CameraManager(camera, self)
+        self.camview = CircleOverlayCameraView(self.cameraManager)
+        self.window = Window(self.camview, self.cameraManager)
         self.window.show()
 
 

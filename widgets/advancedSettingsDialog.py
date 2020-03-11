@@ -2,10 +2,10 @@ from __future__ import annotations
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QDialog, QWidget, QCheckBox, QVBoxLayout, QComboBox, QTabWidget, QDoubleSpinBox, QGridLayout, QLabel
 from constants import Methods
-from widgets.cameraView import CircleOverlayCameraView
 import typing
 if typing.TYPE_CHECKING:
     from hardware.cameraManager import CameraManager
+    from widgets.cameraView import CircleOverlayCameraView
 
 
 class AdvancedSettingsDialog(QDialog): #TODO camera exposure (autoexposure), method specific settings (thresholding)
