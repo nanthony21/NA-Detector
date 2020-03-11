@@ -1,5 +1,6 @@
 from __future__ import annotations
 from PyQt5 import QtCore
+from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QDialog, QWidget, QCheckBox, QVBoxLayout, QComboBox, QTabWidget, QDoubleSpinBox, QGridLayout, QLabel
 from constants import Methods
 import typing
@@ -41,23 +42,34 @@ class CameraTab(QWidget):
         self.autoExposeCB.setChecked(camManager.isAutoExposure())
         self.exposure = QDoubleSpinBox(self)
 
+        self.expChangeDebounce = QTimer(self)
+        self.expChangeDebounce.setSingleShot(True)
+        self.expChangeDebounce.setInterval(300)
+        def setExposure():
+            camManager.setExposure(self.exposure.value())
+        self.expChangeDebounce.timeout.connect(setExposure)
+
         self.exposure.setMinimum(0)
         self.exposure.setMaximum(1000)
         self.exposure.setSingleStep(1)
+        self.exposure.setValue(camManager.getExposure())
 
         def autoExposeChanged():
-            camManager.setAutoExposure(self.autoExposeCB.isChecked())
+            ae = self.autoExposeCB.isChecked()
+            camManager.setAutoExposure(ae)
+            self.exposure.setEnabled(not ae)
+            setExposure()
         self.autoExposeCB.stateChanged.connect(autoExposeChanged)
 
         def expChanged():
-            camManager.setExposure(self.exposure.value())
+            self.expChangeDebounce.start()
         self.exposure.valueChanged.connect(expChanged)
 
         def updateExpField(newExp: float):
             self.exposure.blockSignals(True)
             self.exposure.setValue(newExp)
             self.exposure.blockSignals(False)
-        camManager.autoExposureChanged.connect(updateExpField)
+        camManager.exposureChanged.connect(updateExpField)
 
         l = QGridLayout()
         l.addWidget(self.autoExposeCB, 0, 0, 1, 2)

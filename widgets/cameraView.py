@@ -6,12 +6,12 @@ from typing import List
 import numpy as np
 import scipy
 from PyQt5 import QtGui, QtCore
-from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import QTimer, pyqtSignal
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QPen, QBrush
 from PyQt5.QtWidgets import QLabel, QSizePolicy
 
 from abc import ABC, abstractmethod
-from analysis import binarizeImage, initialGuessCircle, fitCircle, fitCircleHough, detectEdges
+from analysis import binarizeImageLi, binarizeImageOtsu, initialGuessCircle, fitCircle, fitCircleHough, detectEdges
 from constants import Methods
 import typing
 if typing.TYPE_CHECKING:
@@ -94,6 +94,8 @@ class CameraView(QLabel):
 
 
 class CircleOverlayCameraView(CameraView):
+    mouseMoved = pyqtSignal(int, int)
+
     def __init__(self, camera):
         self.fitCoords = None
         self.preoptCoords = None
@@ -109,18 +111,25 @@ class CircleOverlayCameraView(CameraView):
         self._overlays: List[Overlay] = [self.fitOverlay, self.preOptFitOverlay]
         super().__init__(camera)
 
-    def mousePressEvent(self, ev: QtGui.QMouseEvent) -> None:
-        x, y = ev.x(), ev.y()
+    def _mapWidgetCoordToPixel(self, x, y):
         pm = self.pixmap()
         scale = self.width()/pm.width() #We assume the height scaling is the same.
         print(scale)
         print(x, y)
         x /= scale
         y /= scale
+        return x, y
+
+    def mousePressEvent(self, ev: QtGui.QMouseEvent) -> None:
+        x, y = self._mapWidgetCoordToPixel(ev.x(), ev.y())
         ov = CircleOverlay(QtCore.Qt.NoBrush, QtCore.Qt.red, x, y, 1)
         ov.active = True
         self.graphicsProxyWidget()
         self.addOverlay(ov)
+
+    def mouseMoveEvent(self, ev: QtGui.QMouseEvent) -> None:
+        x, y = self._mapWidgetCoordToPixel(ev.x(), ev.y())
+        self.mouseMoved.emit(x, y)
 
     def measureCircle(self, q: Queue, im):
         if self.method == Methods.Minimization:

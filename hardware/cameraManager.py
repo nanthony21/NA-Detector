@@ -1,10 +1,10 @@
 from PyQt5.QtCore import QTimer, pyqtSignal, QObject
 from instrumental.drivers.cameras import Camera
-
+import time
 
 
 class CameraManager(QObject):
-    autoExposureChanged = pyqtSignal(float)
+    exposureChanged = pyqtSignal(float)
     def __init__(self, camera: Camera, parent: QObject = None):
         super().__init__(parent)
         self._cam = camera
@@ -23,13 +23,15 @@ class CameraManager(QObject):
             # self._aeTimer.start()
 
     def isAutoExposure(self):
-        return self._cam.auto_exposure()
+        return self._cam.auto_exposure
 
     def setExposure(self, exp: float):
         self._exposure = exp
         if self.isRunning:
             self.stop_live_video()
+            time.sleep(.1)  # This delay helps prevent a hard crash.
             self.start_live_video() #This is to update the exposure used.
+        self.exposureChanged.emit(self._exposure)
 
     def getExposure(self):
         return self._exposure

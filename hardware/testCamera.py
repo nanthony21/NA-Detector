@@ -9,7 +9,6 @@ class TestCamera:
         self._started = False
         self.noiseLevel = noiseLevel
         self.arrayShape = shape
-        # self.lastxyr = (shape[1]//2, shape[0]//2, shape[1]//6)
 
     def grab_image(self, **kwargs):
         return self._getFrame()
@@ -29,6 +28,7 @@ class TestCamera:
     def set_auto_exposure(self, enable=True):
         pass
 
+    @property
     def auto_exposure(self) -> bool:
         return False
 

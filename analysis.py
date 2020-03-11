@@ -14,12 +14,19 @@ import numpy as np
 import scipy as sp
 
 
-def binarizeImage(im: np.ndarray) -> np.ndarray:
+def binarizeImageLi(im: np.ndarray) -> np.ndarray:
     """Take the Uint8 image from the camera and binarize it for further processing."""
-    #    thresh = sk.filters.threshold_otsu(im) This wasn't always working well
     thresh = skfilters.threshold_li(im)
     binar = im > thresh
     return binar
+
+
+def binarizeImageOtsu(im: np.ndarray) -> np.ndarray:
+    """Take the Uint8 image from the camera and binarize it for further processing."""
+    thresh = sk.filters.threshold_otsu(im)
+    binar = im > thresh
+    return binar
+
 
 def initialGuessCircle(binary: np.ndarray):
     """Generate an initial guess for x, y, and r of the circle based on a binarized image."""
@@ -28,6 +35,7 @@ def initialGuessCircle(binary: np.ndarray):
     y0, x0 = bubble.centroid
     r0 = bubble.major_axis_length / 2  # These are our initial values that we will start our optimization with.
     return x0, y0, r0
+
 
 def fitCircle(binar: np.ndarray, x0, y0, r0) -> Tuple[float, float, float]:
     def cost(args: (float, float, float)): #We have to use args here rather than individual arguments because of out the sp.optimize function works. the binarized image is included in the function using closure.

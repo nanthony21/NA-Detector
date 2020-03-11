@@ -29,8 +29,7 @@ class App(QApplication):
 
 
 if __name__ == '__main__':
-    test = True
-
+    test = False
     cam = None
     if test:
         cam = TestCamera((512,1024), 10)
