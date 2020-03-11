@@ -42,9 +42,9 @@ def fitCircle(binar: np.ndarray, x0, y0, r0) -> Tuple[float, float, float]:
         """Calculate the cost to be minimized which in this case is the negative of the number of pixels that overlap between our circle(x,y,r) and the binary image."""
         x, y, r = args
         coords = sk.draw.circle(y, x, r, shape=binar.shape)
-        template = np.zeros_like(binar)
+        template = np.zeros_like(binar) #Template is a binary array based on the x,y, and r
         template[coords] = True
-        return -(np.sum(template == binar))
+        return -(np.sum(template == binar)) #The score is the number of pixels that are correct. should this be changed?
     
     result = sp.optimize.minimize(cost, x0=(x0, y0, r0))
     X, Y, R = tuple(result.x)

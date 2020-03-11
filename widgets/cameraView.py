@@ -106,7 +106,7 @@ class CircleOverlayCameraView(CameraView):
         self.preOptFitOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QtCore.Qt.darkBlue, 0, 0, 0)
         self.fitOverlay.active = True
 
-        self.method = Methods.Minimization
+        self.method = Methods.LiMinimization
 
         self._overlays: List[Overlay] = [self.fitOverlay, self.preOptFitOverlay]
         super().__init__(camera)
@@ -132,8 +132,12 @@ class CircleOverlayCameraView(CameraView):
         self.mouseMoved.emit(x, y)
 
     def measureCircle(self, q: Queue, im):
-        if self.method == Methods.Minimization:
-            binar = binarizeImage(im)
+        if self.method == Methods.LiMinimization:
+            binar = binarizeImageLi(im)
+            x0, y0, r0 = initialGuessCircle(binar)
+            x, y, r = fitCircle(binar, x0, y0, r0)
+        elif self.method == Methods.OtsuMinimization:
+            binar = binarizeImageOtsu(im)
             x0, y0, r0 = initialGuessCircle(binar)
             x, y, r = fitCircle(binar, x0, y0, r0)
         elif self.method == Methods.HoughTransform:
@@ -162,8 +166,11 @@ class CircleOverlayCameraView(CameraView):
             self.preoptCoords, self.fitCoords = self.fitQ.get()
 
         if self.displayPreProcessed:
-            if self.method == Methods.Minimization:
-                binary = binarizeImage(im)
+            if self.method == Methods.LiMinimization:
+                binary = binarizeImageLi(im)
+                newim = binary.astype(np.uint8) * 255
+            elif self.method == Methods.OtsuMinimization:
+                binary = binarizeImageOtsu(im)
                 newim = binary.astype(np.uint8) * 255
             elif self.method == Methods.HoughTransform:
                 edges = detectEdges(im)

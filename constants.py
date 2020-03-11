@@ -2,5 +2,6 @@ from enum import Enum, auto
 
 
 class Methods(Enum):
-    Minimization = auto()
+    LiMinimization = auto()
+    OtsuMinimization = auto()
     HoughTransform = auto()
