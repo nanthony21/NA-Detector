@@ -120,8 +120,6 @@ class CircleOverlayCameraView(CameraView):
         self.graphicsProxyWidget()
         self.addOverlay(ov)
 
-
-
     def measureCircle(self, q: Queue, im):
         if self.method == Methods.Minimization:
             binar = binarizeImage(im)
