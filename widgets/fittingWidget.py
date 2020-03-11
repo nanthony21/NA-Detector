@@ -16,23 +16,24 @@ class FittingWidget(QFrame):
         self.objectiveX = QDoubleSpinBox(self)
         self.objectiveY = QDoubleSpinBox(self)
         self.measureObjectiveButton = QPushButton("Measure Reference Aperture", self)
-        displayCheckbox = QCheckBox("Display Overlay:", self)
+        displayCheckbox = QCheckBox("Display Overlay", self)
         # configure limits
         for i in [self.objectiveD, self.objectiveX, self.objectiveY]:
             i.setMinimum(0)
-            i.setMaximum(100000000)
+            i.setMaximum(2048)
+            i.setDecimals(1)
             i.setSingleStep(1)
 
         i = self.objectiveNA
-        i.setMaximum(100000000)
+        i.setMaximum(2)
         i.setMinimum(0)
+        i.setDecimals(3)
         i.setSingleStep(0.1)
 
         def updateOverlay():
-            self.objectiveOverlay.active = True
-            self.objectiveOverlay.x = self._objCenter[0]
-            self.objectiveOverlay.y = self._objCenter[1]
-            self.objectiveOverlay.r = d / 2
+            self.objectiveOverlay.x = self.objectiveX.value()
+            self.objectiveOverlay.y = self.objectiveY.value()
+            self.objectiveOverlay.r = self.objectiveD.value() / 2
             if not self.parentWindow.cameraView.isRunning:
                 self.parentWindow.cameraView.refresh()
 
@@ -40,10 +41,9 @@ class FittingWidget(QFrame):
             d = self.objectiveD.value()
             if d != 0:
                 self._naPerPix = self.objectiveNA.value() / d
-            self._objCenter = (self.objectiveX.value(), self.objectiveY.value())
             updateOverlay()
-
             self.targetNA.valueChanged.emit(0) #Trigger the targChanged() function. Not sure what the number should be or if it matters.
+            self.measD.valueChanged.emit(0)
         self.objectiveNA.valueChanged.connect(objChanged)
         self.objectiveD.valueChanged.connect(objChanged)
         self.objectiveX.valueChanged.connect(objChanged)
@@ -79,22 +79,18 @@ class FittingWidget(QFrame):
 
     def setupMeasurePanel(self) -> QGridLayout:
         self.measD = QDoubleSpinBox(self)
-        self.measNA = QDoubleSpinBox(self)
+        self.measNA = QLabel('0', self)
         self.measX = QDoubleSpinBox(self)
         self.measY = QDoubleSpinBox(self)
         self.measureApertureButton = QPushButton("Measure Aperture", self)
-        displayCheckbox = QCheckBox("Display Overlay:", self)
+        displayCheckbox = QCheckBox("Display Overlay", self)
 
         # configure limits
         for i in [self.measX, self.measY, self.measD]:
             i.setMinimum(0)
-            i.setMaximum(100000000)
+            i.setMaximum(2048)
+            i.setDecimals(1)
             i.setSingleStep(1)
-
-        i = self.measNA
-        i.setMaximum(100000000)
-        i.setMinimum(0)
-        i.setSingleStep(0.1)
 
         def updateOverlay():
             self.measuredOverlay.x = self.measX.value()
@@ -105,7 +101,6 @@ class FittingWidget(QFrame):
 
         def measTarg():
             x, y, r = self.parentWindow.cameraView.fitCoords
-            self._measCenter = (x, y)
             self.measD.setValue(r*2)
             self.measX.setValue(x)
             self.measY.setValue(y)
@@ -121,13 +116,19 @@ class FittingWidget(QFrame):
         displayCheckbox.stateChanged.connect(displayCB)
         displayCheckbox.setChecked(True)
 
+        def measChanged():
+            if self._naPerPix != 0:
+                self.measNA.setText(f"{self.measD.value() * self._naPerPix:.3f}")
+            updateOverlay()
+        self.measD.valueChanged.connect(measChanged)
+
         gl = QGridLayout()
         gl.addWidget(QLabel("Diameter (px):"), 0, 0)
         gl.addWidget(self.measD, 0, 1)
         gl.addWidget(QLabel("Center (x,y):"), 1, 0)
         gl.addWidget(self.measX, 1, 1)
         gl.addWidget(self.measY, 1, 2)
-        gl.addWidget(QLabel("NA"), 2, 0)
+        gl.addWidget(QLabel("NA:"), 2, 0)
         gl.addWidget(self.measNA, 2, 1)
         gl.addWidget(displayCheckbox, 3, 0, 1, 3)
         gl.addWidget(self.measureApertureButton, 4, 0, 1, 3)
@@ -143,18 +144,19 @@ class FittingWidget(QFrame):
         # configure limits
         for i in [self.targetD, self.targetX, self.targetY]:
             i.setMinimum(0)
-            i.setMaximum(100000000)
+            i.setMaximum(2048)
+            i.setDecimals(1)
             i.setSingleStep(1)
 
         i = self.targetNA
-        i.setMaximum(100000000)
+        i.setMaximum(2)
         i.setMinimum(0)
+        i.setDecimals(3)
         i.setSingleStep(0.1)
 
         def updateOverlay():
-            self.targetOverlay.active = True
-            self.targetOverlay.x = self.targetX.value() #self._measCenter[0]
-            self.targetOverlay.y = self.targetY.value() #self._measCenter[1]
+            self.targetOverlay.x = self.targetX.value()
+            self.targetOverlay.y = self.targetY.value()
             self.targetOverlay.r = self.targetD.value() / 2
             if not self.parentWindow.cameraView.isRunning:
                 self.parentWindow.cameraView.refresh()
@@ -200,7 +202,7 @@ class FittingWidget(QFrame):
         gl.addWidget(QLabel("Center (x,y):"), 1, 0)
         gl.addWidget(self.targetX, 1, 1)
         gl.addWidget(self.targetY, 1, 2)
-        gl.addWidget(QLabel("NA"), 2, 0)
+        gl.addWidget(QLabel("NA:"), 2, 0)
         gl.addWidget(self.targetNA, 2, 1, 1, 2)
         gl.addWidget(displayCheckBox, 3, 0, 1, 3)
         gl.addWidget(self.centerTargetButton, 4, 0, 1, 3)
@@ -214,8 +216,6 @@ class FittingWidget(QFrame):
         self.setFrameShape(QFrame.StyledPanel)
 
         self._naPerPix = 0
-        self._objCenter = (0, 0)
-        self._measCenter = (0, 0)
 
         self.objectiveOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QtCore.Qt.blue, 0, 0, 0)
         self.targetOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QtCore.Qt.green, 0, 0, 0)
