@@ -58,7 +58,8 @@ class CameraTab(QWidget):
             ae = self.autoExposeCB.isChecked()
             camManager.setAutoExposure(ae)
             self.exposure.setEnabled(not ae)
-            setExposure()
+            if not ae:
+                setExposure()
         self.autoExposeCB.stateChanged.connect(autoExposeChanged)
 
         def expChanged():

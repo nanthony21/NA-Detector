@@ -106,18 +106,24 @@ class CircleOverlayCameraView(CameraView):
         self.preOptFitOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QtCore.Qt.darkBlue, 0, 0, 0)
         self.fitOverlay.active = True
 
+
         self.method = Methods.LiMinimization
 
         self._overlays: List[Overlay] = [self.fitOverlay, self.preOptFitOverlay]
         super().__init__(camera)
+        self.setMouseTracking(True) #Makes mouseMoveEventFire without clicking.
 
     def _mapWidgetCoordToPixel(self, x, y):
         pm = self.pixmap()
         scale = self.width()/pm.width() #We assume the height scaling is the same.
-        print(scale)
-        print(x, y)
         x /= scale
         y /= scale
+        if x > self.camera.width:
+            x = self.camera.width
+            print('errr x')
+        if y > self.camera.height:
+            y = self.camera.height
+            print('errr y')
         return x, y
 
     def mousePressEvent(self, ev: QtGui.QMouseEvent) -> None:

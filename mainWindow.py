@@ -1,6 +1,6 @@
 from __future__ import annotations
 from PyQt5.QtCore import QPoint
-from PyQt5.QtWidgets import QMainWindow, QPushButton, QVBoxLayout, QWidget, QGridLayout, QHBoxLayout
+from PyQt5.QtWidgets import QMainWindow, QPushButton, QVBoxLayout, QWidget, QGridLayout, QHBoxLayout, QLabel
 
 from hardware.cameraManager import CameraManager
 from widgets.advancedSettingsDialog import AdvancedSettingsDialog
@@ -18,14 +18,20 @@ class Window(QMainWindow):
         self.advancedDlg = AdvancedSettingsDialog(self, camview, camManager)
         self.cameraView = camview
 
-        self.button = QPushButton("Start Video")
-        self.btn_grab = QPushButton("Grab Frame")
-        self.advancedButton = QPushButton("Advanced...")
+        self.coordsLabel = QLabel(self)
+        self.button = QPushButton("Start Video", self)
+        self.btn_grab = QPushButton("Grab Frame", self)
+        self.advancedButton = QPushButton("Advanced...", self)
 
         self.arWidget = AspectRatioWidget(camview.arr.shape[1] / camview.arr.shape[0], self)
         self.arWidget.setLayout(QVBoxLayout())
         self.arWidget.layout().setContentsMargins(0, 0, 0, 0)
         self.arWidget.layout().addWidget(camview)
+
+        def setCoordLabel(x, y):
+            v = self.cameraView.arr[y, x]
+            self.coordsLabel.setText(f"x={x}, y={y}, value={v}")
+        self.cameraView.mouseMoved.connect(setCoordLabel)
 
         def start_stop():
             if not self.cameraView.isRunning:
@@ -59,19 +65,16 @@ class Window(QMainWindow):
         button_area.setLayout(QHBoxLayout())
         fittingWidget = FittingWidget(self)
 
-
         # Fill Layouts
         l: QGridLayout = main_area.layout()
         l.addWidget(self.arWidget, 0, 0)
         l.addWidget(button_area, 1, 0)
         l.addWidget(fittingWidget, 0, 1, 2, 1)
         l.setRowStretch(0, 1)
-        # l.setHorizontalSpacing(1)
-        # l.setVerticalSpacing(1)
-
 
         l = button_area.layout()
         l.addStretch()  # Makes the buttons move over rather than spread out.
+        l.addWidget(self.coordsLabel)
         l.addWidget(self.button)
         l.addWidget(self.btn_grab)
         l.addWidget(self.advancedButton)
