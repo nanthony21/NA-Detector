@@ -143,8 +143,8 @@ class CircleOverlayCameraView(CameraView):
             x, y, r = fitCircle(binar, x0, y0, r0)
         elif self.method == Methods.HoughTransform:
             edges = detectEdges(im)
-            x, y, r = fitCircleHough(edges)
-            x0, y0, r0 = x, y, r # We don't have an initial guess in this case
+            x0, y0, r0 = initialGuessCircle(edges)
+            x, y, r = fitCircleHough(edges, x0, y0, r0)
         else:
             raise ValueError("No recognized method")
         if not q.empty():

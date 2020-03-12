@@ -5,13 +5,14 @@ import skimage
 
 
 class TestCamera:
-    def __init__(self, shape, noiseLevel):
+    def __init__(self, shape, noiseLevel, ring = False):
         self._started = False
         self.noiseLevel = noiseLevel
         self.arrayShape = shape
+        self.ring = ring
 
     def grab_image(self, **kwargs):
-        return self._getFrame()
+        return self._getFrame(self.ring)
 
     def start_live_video(self, **kwargs):
         self._started = True
@@ -23,7 +24,7 @@ class TestCamera:
         return self._started
 
     def latest_frame(self, **kwargs):
-        return self._getFrame()
+        return self._getFrame(self.ring)
 
     def set_auto_exposure(self, enable=True):
         pass
@@ -32,17 +33,21 @@ class TestCamera:
     def auto_exposure(self) -> bool:
         return False
 
-    def _getFrame(self):
+    def _getFrame(self, ring = False):
         y = random.randrange(self.arrayShape[0]//4, self.arrayShape[0]//2)
         x = random.randrange(self.arrayShape[1]//4, self.arrayShape[1]//2)
         r = random.randrange(50, 200)
-
-        # self.lastxyr = (x,y,r)
 
         coords = skimage.draw.circle(y, x, r, shape=self.arrayShape)
         im = np.zeros(self.arrayShape, dtype=np.uint8)
         im[coords] = 127
         im += (np.random.rand(*self.arrayShape) * self.noiseLevel).astype(np.uint8)
+
+        if ring:
+            littleR = r * 0.5
+            coords = skimage.draw.circle(y, x, littleR, shape=self.arrayShape)
+            im[coords] = 0
+
         return im
 
     def __enter__(self):
