@@ -11,6 +11,9 @@ from PyQt5.QtGui import QImage, QPixmap, QPainter, QPen, QBrush
 from PyQt5.QtWidgets import QLabel, QSizePolicy
 
 from abc import ABC, abstractmethod
+
+from skimage.transform import downscale_local_mean
+
 from analysis import binarizeImageLi, binarizeImageOtsu, initialGuessCircle, fitCircle, fitCircleHough, detectEdges
 from constants import Methods
 import typing
@@ -74,8 +77,8 @@ class CameraView(QLabel):
                 fmt = QImage.Format_Indexed8
             else:
                 raise Exception("Unsupported color mode")
-        self._saved_img = arr  # Save a reference to keep Qt from crashing
-        image = QImage(arr.data, self.camera.width, self.camera.height, bpl, fmt)
+        self._saved_img = arr  # Save a reference to keep Qt from crashing. I don't think this is necessary
+        image = QImage(arr.data, arr.shape[1], arr.shape[0], bpl, fmt)
 
         self.setPixmap(QPixmap.fromImage(image))
 
@@ -101,7 +104,7 @@ class CircleOverlayCameraView(CameraView):
         self.displayPreProcessed = False
         self.preOptFitOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QtCore.Qt.darkBlue, 0, 0, 0)
 
-
+        self._downSample = 1
         self.method = Methods.LiMinimization
 
         self._overlays: List[Overlay] = [self.preOptFitOverlay]
@@ -111,6 +114,7 @@ class CircleOverlayCameraView(CameraView):
     def _mapWidgetCoordToPixel(self, x, y):
         pm = self.pixmap()
         scale = self.width()/pm.width() #We assume the height scaling is the same.
+        scale /= self._downSample
         x /= scale
         y /= scale
         if x > self.camera.width:
@@ -152,6 +156,10 @@ class CircleOverlayCameraView(CameraView):
         q.put(((x0, y0, r0), (x, y, r)), False)  # This will raise an exception if the queue doesn't have room
 
     def processImage(self, im: np.ndarray, block=False) -> np.ndarray:
+        if self._downSample != 1:
+            dtype = im.dtype
+            im = downscale_local_mean(im, (self._downSample, self._downSample))
+            im = im.astype(dtype)
         if self.fitThread is None:
             self.fitThread = Thread(target=self.measureCircle, args=(self.fitQ, im))
             self.fitThread.start()
@@ -199,6 +207,9 @@ class CircleOverlayCameraView(CameraView):
 
     def removeOverlay(self, overlay: Overlay):
         self._overlays.remove(overlay)
+
+    def setDownSampling(self, ds: int):
+        self._downSample = ds
 
 class Overlay(ABC):
     def __init__(self, brush, pen):
