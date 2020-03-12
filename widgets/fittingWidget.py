@@ -145,7 +145,7 @@ class FittingWidget(QFrame):
         gl.addWidget(QLabel("NA:"), 2, 0)
         gl.addWidget(self.measNA, 2, 1)
         gl.addWidget(displayCheckbox, 3, 0, 1, 3)
-        gl.addWidget(self.measureApertureButton, 4, 0, 1, 3)
+        gl.addWidget(self.measureApertureCheckbox, 4, 0, 1, 3)
         return gl
 
     def setupTargetPanel(self) -> QGridLayout:
