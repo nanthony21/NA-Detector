@@ -19,10 +19,10 @@ class AdvancedSettingsDialog(QDialog): #TODO camera exposure (autoexposure), met
 
         self.debugTab = DebugTab(tab, camview)
         self.cameraTab = CameraTab(tab, camManager)
-        self.thresholdTab = ThresholdTab(tab)
+        # self.thresholdTab = ThresholdTab(tab)
 
         tab.addTab(self.cameraTab, "Camera")
-        tab.addTab(self.thresholdTab, "Threshold")
+        # tab.addTab(self.thresholdTab, "Threshold")
         tab.addTab(self.debugTab, "Debug")
 
         l = QGridLayout()
@@ -78,14 +78,14 @@ class CameraTab(QWidget):
         l.addWidget(self.exposure, 1, 1)
         self.setLayout(l)
 
-
-class ThresholdTab(QWidget):
-    def __init__(self, parent: QWidget):
-        super().__init__(parent)
-
-        l = QGridLayout()
-        self.setLayout(l)
-
+#
+# class ThresholdTab(QWidget):
+#     def __init__(self, parent: QWidget):
+#         super().__init__(parent)
+#
+#         l = QGridLayout()
+#         self.setLayout(l)
+#
 
 class DebugTab(QWidget):
     def __init__(self, parent: QWidget, camview: CircleOverlayCameraView):

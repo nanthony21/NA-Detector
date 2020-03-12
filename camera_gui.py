@@ -44,5 +44,8 @@ if __name__ == '__main__':
     if cam is not None:
         with cam:
             app = App(sys.argv, cam)
+            #Initial settings for the app
+            app.window.videoButton.click()  # Start the video
+            app.window.advancedDlg.cameraTab.autoExposeCB.click() #Turn on autoexposure
             app.exec_()
         

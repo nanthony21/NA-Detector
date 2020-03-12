@@ -19,7 +19,7 @@ class Window(QMainWindow):
         self.cameraView = camview
 
         self.coordsLabel = QLabel(self)
-        self.button = QPushButton("Start Video", self)
+        self.videoButton = QPushButton("Start Video", self)
         self.btn_grab = QPushButton("Grab Frame", self)
         self.advancedButton = QPushButton("Advanced...", self)
 
@@ -36,13 +36,13 @@ class Window(QMainWindow):
         def start_stop():
             if not self.cameraView.isRunning:
                 camview.start_video()
-                self.button.setText("Stop Video")
+                self.videoButton.setText("Stop Video")
                 self.btn_grab.setEnabled(False)
             else:
                 camview.stop_video()
-                self.button.setText("Start Video")
+                self.videoButton.setText("Start Video")
                 self.btn_grab.setEnabled(True)
-        self.button.clicked.connect(start_stop)
+        self.videoButton.clicked.connect(start_stop)
 
         def grab():
             camview.grab_image()
@@ -75,7 +75,7 @@ class Window(QMainWindow):
         l = button_area.layout()
         l.addStretch()  # Makes the buttons move over rather than spread out.
         l.addWidget(self.coordsLabel)
-        l.addWidget(self.button)
+        l.addWidget(self.videoButton)
         l.addWidget(self.btn_grab)
         l.addWidget(self.advancedButton)
 
