@@ -27,8 +27,7 @@ class CameraView(QLabel):
         self.setScaledContents(True)
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         self.setMinimumSize(50,50)
-        self.timer = QTimer()
-        self.timer.timeout.connect(self._wait_for_frame)
+        self.camera.frameReady.connect(self._displayNewFrame)
         self.isRunning = False
         self.rawArray = None
         self.processedArray = None
@@ -51,11 +50,9 @@ class CameraView(QLabel):
     def start_video(self):
         self.isRunning = True
         self.camera.start_live_video()
-        self.timer.start(0)  # Run full throttle
 
     def stop_video(self):
         self.isRunning = False
-        self.timer.stop()
         self.camera.stop_live_video()
 
     def _set_pixmap_from_array(self, arr):
@@ -82,13 +79,11 @@ class CameraView(QLabel):
 
         self.setPixmap(QPixmap.fromImage(image))
 
-    def _wait_for_frame(self):
-        frame_ready = self.camera.wait_for_frame(timeout='0 ms')
-        if frame_ready:
-            self.rawArray = self.camera.latest_frame(copy=False)
-            self.processedArray = self.processImage(self.rawArray, block=False)
-            self._set_pixmap_from_array(self.processedArray)
-            self.processPixmap()
+    def _displayNewFrame(self, frame):
+        self.rawArray = frame
+        self.processedArray = self.processImage(self.rawArray, block=False)
+        self._set_pixmap_from_array(self.processedArray)
+        self.processPixmap()
 
     def processPixmap(self):
         pass
