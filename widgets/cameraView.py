@@ -91,6 +91,7 @@ class CameraView(QLabel):
 
 class CircleOverlayCameraView(CameraView):
     mouseMoved = pyqtSignal(int, int)
+    fitCompleted = pyqtSignal(float, float, float)
 
     def __init__(self, camera):
         self.fitCoords = None
@@ -98,14 +99,12 @@ class CircleOverlayCameraView(CameraView):
         self.fitQ = Queue(maxsize=1)
         self.fitThread = None
         self.displayPreProcessed = False
-        self.fitOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QtCore.Qt.red, 0, 0, 0)
         self.preOptFitOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QtCore.Qt.darkBlue, 0, 0, 0)
-        self.fitOverlay.active = True
 
 
         self.method = Methods.LiMinimization
 
-        self._overlays: List[Overlay] = [self.fitOverlay, self.preOptFitOverlay]
+        self._overlays: List[Overlay] = [self.preOptFitOverlay]
         super().__init__(camera)
         self.setMouseTracking(True) #Makes mouseMoveEventFire without clicking.
 
@@ -166,6 +165,7 @@ class CircleOverlayCameraView(CameraView):
 
         if not self.fitQ.empty():
             self.preoptCoords, self.fitCoords = self.fitQ.get()
+            self.fitCompleted.emit(*self.fitCoords)
 
         if self.displayPreProcessed:
             if self.method == Methods.LiMinimization:
@@ -186,9 +186,6 @@ class CircleOverlayCameraView(CameraView):
     def processPixmap(self):
         pm = self.pixmap()
         painter = QPainter(pm)
-        if self.fitCoords is not None:
-            x, y, r = self.fitCoords
-            self.fitOverlay.setCoords(x, y, r)
         if self.preoptCoords is not None:
             x, y, r = self.preoptCoords
             self.preOptFitOverlay.setCoords(x, y, r)

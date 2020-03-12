@@ -90,7 +90,7 @@ class FittingWidget(QFrame):
         self.measNA = QLabel('0', self)
         self.measX = QDoubleSpinBox(self)
         self.measY = QDoubleSpinBox(self)
-        self.measureApertureButton = QPushButton("Measure Aperture", self)
+        self.measureApertureCheckbox = QCheckBox("Measure Aperture", self)
         displayCheckbox = QCheckBox("Display Overlay", self)
 
         # configure limits
@@ -107,14 +107,6 @@ class FittingWidget(QFrame):
             if not self.parentWindow.cameraView.isRunning:
                 self.parentWindow.cameraView.refresh()
 
-        def measTarg():
-            x, y, r = self.parentWindow.cameraView.fitCoords
-            self.measD.setValue(r*2)
-            self.measX.setValue(x)
-            self.measY.setValue(y)
-            updateOverlay()
-        self.measureApertureButton.released.connect(measTarg)
-
         def displayCB():
             if displayCheckbox.checkState():
                 self.measuredOverlay.active = True
@@ -123,6 +115,20 @@ class FittingWidget(QFrame):
             updateOverlay()
         displayCheckbox.stateChanged.connect(displayCB)
         displayCheckbox.setChecked(True)
+
+        def updateCoordsFromView(x, y, r):
+            self.measD.setValue(r*2)
+            self.measX.setValue(x)
+            self.measY.setValue(y)
+            updateOverlay()
+
+        def connectCamViewFit():
+            if self.measureApertureCheckbox.isChecked():
+                self.fitConnection = self.parentWindow.cameraView.fitCompleted.connect(updateCoordsFromView)
+            else:
+                self.parentWindow.cameraView.fitCompleted.disconnect(self.fitConnection)
+        self.measureApertureCheckbox.stateChanged.connect(connectCamViewFit)
+        self.measureApertureCheckbox.setChecked(True)
 
         def measChanged():
             if self._naPerPix != 0:
@@ -224,6 +230,8 @@ class FittingWidget(QFrame):
         self.setFrameShape(QFrame.StyledPanel)
 
         self._naPerPix = 0
+
+        self.fitConnection = None
 
         self.objectiveOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QtCore.Qt.blue, 0, 0, 0)
         self.targetOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QtCore.Qt.green, 0, 0, 0)
