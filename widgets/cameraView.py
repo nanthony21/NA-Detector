@@ -30,21 +30,22 @@ class CameraView(QLabel):
         self.timer = QTimer()
         self.timer.timeout.connect(self._wait_for_frame)
         self.isRunning = False
-        self.arr = None
+        self.rawArray = None
+        self.processedArray = None
         self.grab_image()
 
 
     def refresh(self):
-        self._set_pixmap_from_array(self.arr)
+        self._set_pixmap_from_array(self.processedArray)
         self.processPixmap()
 
     def processImage(self, im: np.ndarray, **kwargs) -> np.ndarray:
         return im  # This class is to be overridden by inheriting classes.
 
     def grab_image(self):
-        self.arr = self.camera.grab_image()
-        self.arr = self.processImage(self.arr, block=True)
-        self._set_pixmap_from_array(self.arr)
+        self.rawArray = self.camera.grab_image()
+        self.processedArray = self.processImage(self.rawArray, block=True)
+        self._set_pixmap_from_array(self.processedArray)
         self.processPixmap()
 
     def start_video(self):
@@ -84,9 +85,9 @@ class CameraView(QLabel):
     def _wait_for_frame(self):
         frame_ready = self.camera.wait_for_frame(timeout='0 ms')
         if frame_ready:
-            self.arr = self.camera.latest_frame(copy=False)
-            self.arr = self.processImage(self.arr, block=False)
-            self._set_pixmap_from_array(self.arr)
+            self.rawArray = self.camera.latest_frame(copy=False)
+            self.processedArray = self.processImage(self.rawArray, block=False)
+            self._set_pixmap_from_array(self.processedArray)
             self.processPixmap()
 
     def processPixmap(self):

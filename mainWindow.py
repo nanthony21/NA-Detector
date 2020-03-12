@@ -23,13 +23,13 @@ class Window(QMainWindow):
         self.btn_grab = QPushButton("Grab Frame", self)
         self.advancedButton = QPushButton("Advanced...", self)
 
-        self.arWidget = AspectRatioWidget(camview.arr.shape[1] / camview.arr.shape[0], self)
+        self.arWidget = AspectRatioWidget(camview.rawArray.shape[1] / camview.rawArray.shape[0], self)
         self.arWidget.setLayout(QVBoxLayout())
         self.arWidget.layout().setContentsMargins(0, 0, 0, 0)
         self.arWidget.layout().addWidget(camview)
 
         def setCoordLabel(x, y):
-            v = self.cameraView.arr[y, x]
+            v = self.cameraView.rawArray[y, x]
             self.coordsLabel.setText(f"x={x}, y={y}, value={v}")
         self.cameraView.mouseMoved.connect(setCoordLabel)
 
