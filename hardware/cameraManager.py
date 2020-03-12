@@ -51,8 +51,8 @@ class CameraManager(QObject):
         self._exposure = exp
         if self.isRunning:
             self.stop_live_video()
-            time.sleep(oldexp/1000*1.5)  # This delay helps prevent a hard crash. Still happens sometimes though.
-            self.start_live_video() #This is to update the exposure used.
+            time.sleep(oldexp/1000 + 0.05)  # This delay helps prevent a hard crash. Still happens sometimes though.
+            self.start_live_video()  # This is to update the exposure used.
         self.exposureChanged.emit(self._exposure)
 
     def getExposure(self):
