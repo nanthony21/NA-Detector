@@ -38,12 +38,16 @@ class FittingWidget(QFrame):
                 self.parentWindow.cameraView.refresh()
 
         def objChanged():
+            # Update NAs
             d = self.objectiveD.value()
             if d != 0:
                 self._naPerPix = self.objectiveNA.value() / d
             updateOverlay()
             self.targetNA.valueChanged.emit(0) #Trigger the targChanged() function. Not sure what the number should be or if it matters.
-            self.measD.valueChanged.emit(0)
+            self.measD.valueChanged.emit(0) #Update both other NA measurements based on the new NA
+            #recenter the target
+            self.targetX.setValue(self.objectiveX.value())
+            self.targetY.setValue(self.objectiveY.value())
         self.objectiveNA.valueChanged.connect(objChanged)
         self.objectiveD.valueChanged.connect(objChanged)
         self.objectiveX.valueChanged.connect(objChanged)
@@ -51,9 +55,13 @@ class FittingWidget(QFrame):
 
         def measObj():
             x, y, r = self.parentWindow.cameraView.fitCoords
+            widgets = [self.objectiveX, self.objectiveY, self.objectiveD]
+            [i.blockSignals(True) for i in widgets] #We don't want to trigger objChanged 3 times in a row
             self.objectiveX.setValue(x)
             self.objectiveY.setValue(y)
             self.objectiveD.setValue(r*2)
+            [i.blockSignals(False) for i in widgets]
+            objChanged()
         self.measureObjectiveButton.released.connect(measObj)
 
         def displayCB():

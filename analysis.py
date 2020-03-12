@@ -31,9 +31,12 @@ def binarizeImageOtsu(im: np.ndarray) -> np.ndarray:
 def initialGuessCircle(binary: np.ndarray):
     """Generate an initial guess for x, y, and r of the circle based on a binarized image."""
     regions = sk.measure.regionprops(binary.astype(np.uint8))
-    bubble = regions[0]  # this will be the largest detected region.
-    y0, x0 = bubble.centroid
-    r0 = bubble.major_axis_length / 2  # These are our initial values that we will start our optimization with.
+    try:
+        bubble = regions[0]  # this will be the largest detected region.
+        y0, x0 = bubble.centroid
+        r0 = bubble.major_axis_length / 2  # These are our initial values that we will start our optimization with.
+    except IndexError:  # In rare cases there is no region found
+        x0, y0, r0 = 1, 1, 1
     return x0, y0, r0
 
 

@@ -37,11 +37,17 @@ class CameraManager(QObject):
         return self._exposure
 
     def grab_image(self):
-        return self._cam.grab_image(exposure_time=f"{self._exposure} ms")
+        try:
+            return self._cam.grab_image(exposure_time=f"{self._exposure} ms")
+        except Exception as e:  # If the exposure setting string is bad we can get an eror here
+            print(e)
 
     def start_live_video(self):
         self.isRunning = True
-        return self._cam.start_live_video(exposure_time=f"{self._exposure} ms")
+        try:
+            return self._cam.start_live_video(exposure_time=f"{self._exposure} ms")
+        except Exception as e: #If the exposure setting string is bad we can get an eror here
+            print(e)
 
     def stop_live_video(self):
         self.isRunning = False
