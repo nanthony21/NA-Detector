@@ -140,6 +140,9 @@ class CircleOverlayCameraView(CameraView):
         self.mouseMoved.emit(x, y)
 
     def measureCircle(self, q: Queue, im):
+        if self._downSample != 1:
+            dtype = im.dtype
+            im = downscale_local_mean(im, (self._downSample, self._downSample)).astype(dtype)
         if self.method == Methods.LiMinimization:
             binar = binarizeImageLi(im)
             x0, y0, r0 = initialGuessCircle(binar)
@@ -160,10 +163,12 @@ class CircleOverlayCameraView(CameraView):
             _ = q.get()  # Clear the queue
         q.put(((x0, y0, r0), (x, y, r)), False)  # This will raise an exception if the queue doesn't have room
 
+        # if self._downSample != 1:
+        #     newim = newim.repeat(self._downSample, axis=0).repeat(self._downSample, axis=1)
+            # dtype = newim.dtype
+            # newim = skimage.transform.rescale(newim, self._downSample, preserve_range=True).astype(dtype)
+
     def processImage(self, im: np.ndarray, block=False) -> np.ndarray:
-        if self._downSample != 1:
-            dtype = im.dtype
-            im = downscale_local_mean(im, (self._downSample, self._downSample)).astype(dtype)
         if self.fitThread is None:
             self.fitThread = Thread(target=self.measureCircle, args=(self.fitQ, im))
             self.fitThread.start()
@@ -193,11 +198,6 @@ class CircleOverlayCameraView(CameraView):
                 raise ValueError("Unrecognized method")
         else:
             newim = im
-
-        if self._downSample != 1:
-            newim = newim.repeat(self._downSample, axis=0).repeat(self._downSample, axis=1)
-            # dtype = newim.dtype
-            # newim = skimage.transform.rescale(newim, self._downSample, preserve_range=True).astype(dtype)
         return newim
 
     def processPixmap(self):

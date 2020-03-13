@@ -70,15 +70,17 @@ def fitCircleHough(edges: np.ndarray, x0, y0, r0):
     from skimage.transform import hough_circle, hough_circle_peaks
 
     # Detect two radii
-    hough_radii = np.arange(int(r0*.8), int(r0*1.2), 1)# We expect that the actual radius we be within 20 % of the initial guess
+    hough_radii = np.arange(int(r0*.7), int(r0*1.1), 1)# We expect that the actual radius we be within range of the initial guess
     hough_res = hough_circle(edges, hough_radii)
 
     # Select the most prominent 3 circle
     accums, cx, cy, radii = hough_circle_peaks(hough_res, hough_radii, total_num_peaks=1)
-    return cx[0], cy[0], radii[0]
+    if len(cx) > 0:
+        return cx[0], cy[0], radii[0]
+    else:  # No circles were found
+        return 0, 0, 0
 
 def fitCircleTest(im: np.ndarray) -> Tuple[float, float, float]:
-    #    thresh = sk.filters.threshold_otsu(im) This wasn't always working well
     thresh = skfilters.threshold_li(im)
     binar = im > thresh
     regions = sk.measure.regionprops(binar.astype(np.uint8))

@@ -9,7 +9,7 @@ if typing.TYPE_CHECKING:
     from widgets.cameraView import CircleOverlayCameraView
 
 
-class AdvancedSettingsDialog(QDialog): #TODO camera exposure (autoexposure), method specific settings (thresholding)
+class AdvancedSettingsDialog(QDialog):
     def __init__(self, parent: QWidget, camview: CircleOverlayCameraView, camManager: CameraManager):
         super().__init__(parent)
         self.setWindowTitle("Advanced Settings")
@@ -115,6 +115,8 @@ class DebugTab(QWidget):
         layout = QVBoxLayout()
         layout.addWidget(self.viewPreprocessed)
         layout.addWidget(self.viewPreOpt)
+        layout.addWidget(QLabel("Method:", self))
         layout.addWidget(self.methodCombo)
+        layout.addWidget(QLabel("Downsampling:", self))
         layout.addWidget(self.downSampleCombo)
         self.setLayout(layout)

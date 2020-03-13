@@ -51,7 +51,7 @@ class CameraManager(QObject):
         self._exposure = exp
         if self.isRunning:
             self.stop_live_video()
-            time.sleep(oldexp/1000 + 0.1)  # This delay helps prevent a hard crash. Still happens sometimes though.
+            time.sleep(oldexp/1000 + 0.1)  # This delay helps prevent a hard crash. Still happens sometimes though. Makes things laggy during autoexposure
             self.start_live_video()  # This is to update the exposure used.
         self.exposureChanged.emit(self._exposure)
 
@@ -97,12 +97,12 @@ class CameraManager(QObject):
             if self.isRunning:
                 frameReady = False # We have to get a fresh frame to make sure it's actually at the correct exposure.
                 while not frameReady:
-                    frameReady = self._cam.wait_for_frame(timeout='0 ms') #This essentially steals frames from the display which makes things laggy.
+                    frameReady = self._cam.wait_for_frame(timeout='0 ms')
                 arr = self._cam.latest_frame(copy=False)
                 self.frameReady.emit(arr)
             else:
                 arr = self.grab_image()
-            m = np.percentile(arr, 99)
+            m = np.percentile(arr, 99.5)
             if m >= 255:
                 newExp = self._exposure * 0.8
             elif abs(target - m) > 5:  # Don't do anything if we're within a decent window.
