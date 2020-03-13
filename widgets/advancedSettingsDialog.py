@@ -78,15 +78,6 @@ class CameraTab(QWidget):
         l.addWidget(self.exposure, 1, 1)
         self.setLayout(l)
 
-#
-# class ThresholdTab(QWidget):
-#     def __init__(self, parent: QWidget):
-#         super().__init__(parent)
-#
-#         l = QGridLayout()
-#         self.setLayout(l)
-#
-
 class DebugTab(QWidget):
     def __init__(self, parent: QWidget, camview: CircleOverlayCameraView):
         super().__init__(parent)
@@ -113,8 +104,17 @@ class DebugTab(QWidget):
             camview.method = self.methodCombo.currentData()
         self.methodCombo.currentIndexChanged.connect(methchanged)
 
+        self.downSampleCombo = QComboBox(self)
+        for i in [1, 2, 3]:
+            self.downSampleCombo.addItem(str(i), i)
+        def dsChanged():
+            camview.setDownSampling(self.downSampleCombo.currentData())
+        self.downSampleCombo.currentIndexChanged.connect(dsChanged)
+        self.downSampleCombo.setCurrentText("2")
+
         layout = QVBoxLayout()
         layout.addWidget(self.viewPreprocessed)
         layout.addWidget(self.viewPreOpt)
         layout.addWidget(self.methodCombo)
+        layout.addWidget(self.downSampleCombo)
         self.setLayout(layout)

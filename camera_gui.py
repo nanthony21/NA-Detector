@@ -29,11 +29,11 @@ class App(QApplication):
 
 
 if __name__ == '__main__':
-    test = False
+    test = True
 
     cam = None
     if test:
-        cam = TestCamera((512,1024), 10)
+        cam = TestCamera((512,1024), 10, ring=True)
     else:
         inst = list_instruments()
         print(f"Found {len(inst)} cameras:")

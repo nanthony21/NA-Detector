@@ -65,12 +65,12 @@ def detectEdges(im: np.ndarray):
     edges = canny(im, sigma=3, low_threshold=10, high_threshold=50)
     return edges
 
-def fitCircleHough(edges: np.ndarray):
+def fitCircleHough(edges: np.ndarray, x0, y0, r0):
     """https://scikit-image.org/docs/dev/auto_examples/edges/plot_circular_elliptical_hough_transform.html"""
     from skimage.transform import hough_circle, hough_circle_peaks
 
     # Detect two radii
-    hough_radii = np.arange(50, 400, 1) #Only the radii here can be detected. We want accuracy so we use an interval of 1. Super slow.
+    hough_radii = np.arange(int(r0*.8), int(r0*1.2), 1)# We expect that the actual radius we be within 20 % of the initial guess
     hough_res = hough_circle(edges, hough_radii)
 
     # Select the most prominent 3 circle
