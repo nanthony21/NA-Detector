@@ -5,6 +5,7 @@ from typing import List
 
 import numpy as np
 import scipy
+import skimage
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import QTimer, pyqtSignal
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QPen, QBrush
@@ -114,7 +115,6 @@ class CircleOverlayCameraView(CameraView):
     def _mapWidgetCoordToPixel(self, x, y):
         pm = self.pixmap()
         scale = self.width()/pm.width() #We assume the height scaling is the same.
-        scale /= self._downSample
         x /= scale
         y /= scale
         if x > self.camera.width:
@@ -151,6 +151,8 @@ class CircleOverlayCameraView(CameraView):
             x, y, r = fitCircleHough(edges, x0, y0, r0)
         else:
             raise ValueError("No recognized method")
+        if self._downSample != 1:
+            x0 *= self._downSample; y0 *= self._downSample; r0 *= self._downSample; x *= self._downSample; y *= self._downSample; r *= self._downSample;
         if not q.empty():
             _ = q.get()  # Clear the queue
         q.put(((x0, y0, r0), (x, y, r)), False)  # This will raise an exception if the queue doesn't have room
@@ -188,7 +190,11 @@ class CircleOverlayCameraView(CameraView):
             else:
                 raise ValueError("Unrecognized method")
         else:
-            newim = im  # Convert to RGB
+            newim = im
+
+        if self._downSample != 1:
+            dtype = newim.dtype
+            newim = skimage.transform.rescale(newim, self._downSample, preserve_range=True).astype(dtype)
         return newim
 
     def processPixmap(self):
