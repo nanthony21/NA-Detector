@@ -163,11 +163,6 @@ class CircleOverlayCameraView(CameraView):
             _ = q.get()  # Clear the queue
         q.put(((x0, y0, r0), (x, y, r)), False)  # This will raise an exception if the queue doesn't have room
 
-        # if self._downSample != 1:
-        #     newim = newim.repeat(self._downSample, axis=0).repeat(self._downSample, axis=1)
-            # dtype = newim.dtype
-            # newim = skimage.transform.rescale(newim, self._downSample, preserve_range=True).astype(dtype)
-
     def processImage(self, im: np.ndarray, block=False) -> np.ndarray:
         if self.fitThread is None:
             self.fitThread = Thread(target=self.measureCircle, args=(self.fitQ, im))
