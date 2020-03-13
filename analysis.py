@@ -47,9 +47,12 @@ def fitCircle(binar: np.ndarray, x0, y0, r0) -> Tuple[float, float, float]:
         coords = sk.draw.circle(y, x, r, shape=binar.shape)
         template = np.zeros_like(binar) #Template is a binary array based on the x,y, and r
         template[coords] = True
-        return -(np.sum(template == binar)) #The score is the number of pixels that are correct. should this be changed?
+        err = (np.sum(template == binar))
+        # print(x, y, r)
+        # print(err)
+        return -(err) #The score is the number of pixels that are correct. should this be changed?
     
-    result = sp.optimize.minimize(cost, x0=(x0, y0, r0))
+    result = sp.optimize.minimize(cost, x0=(x0, y0, r0), method='BFGS', jac=None, options={'disp': True, 'eps': 10})
     X, Y, R = tuple(result.x)
     # print(result.success)
     # print(X,Y,R)
