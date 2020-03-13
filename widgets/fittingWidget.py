@@ -124,9 +124,9 @@ class FittingWidget(QFrame):
 
         def connectCamViewFit():
             if self.measureApertureCheckbox.isChecked():
-                self.fitConnection = self.parentWindow.cameraView.fitCompleted.connect(updateCoordsFromView)
+                self.parentWindow.cameraView.fitCompleted.connect(updateCoordsFromView)
             else:
-                self.parentWindow.cameraView.fitCompleted.disconnect(self.fitConnection)
+                self.parentWindow.cameraView.fitCompleted.disconnect(updateCoordsFromView)
         self.measureApertureCheckbox.stateChanged.connect(connectCamViewFit)
         self.measureApertureCheckbox.setChecked(True)
 
@@ -230,8 +230,6 @@ class FittingWidget(QFrame):
         self.setFrameShape(QFrame.StyledPanel)
 
         self._naPerPix = 0
-
-        self.fitConnection = None
 
         self.objectiveOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QtCore.Qt.blue, 0, 0, 0)
         self.targetOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QtCore.Qt.green, 0, 0, 0)
