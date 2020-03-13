@@ -84,10 +84,13 @@ class CameraView(QLabel):
         self.setPixmap(QPixmap.fromImage(image))
 
     def _displayNewFrame(self, frame):
+        self.camera.frameReady.disconnect(self._displayNewFrame)
         self.rawArray = frame
         self.processedArray = self.processImage(self.rawArray, block=False)
         self._set_pixmap_from_array(self.processedArray)
         self.processPixmap()
+        self.camera.frameReady.connect(self._displayNewFrame)
+
 
     def processPixmap(self):
         pass
@@ -160,8 +163,7 @@ class CircleOverlayCameraView(CameraView):
     def processImage(self, im: np.ndarray, block=False) -> np.ndarray:
         if self._downSample != 1:
             dtype = im.dtype
-            im = downscale_local_mean(im, (self._downSample, self._downSample))
-            im = im.astype(dtype)
+            im = downscale_local_mean(im, (self._downSample, self._downSample)).astype(dtype)
         if self.fitThread is None:
             self.fitThread = Thread(target=self.measureCircle, args=(self.fitQ, im))
             self.fitThread.start()
@@ -193,8 +195,9 @@ class CircleOverlayCameraView(CameraView):
             newim = im
 
         if self._downSample != 1:
-            dtype = newim.dtype
-            newim = skimage.transform.rescale(newim, self._downSample, preserve_range=True).astype(dtype)
+            newim = newim.repeat(self._downSample, axis=0).repeat(self._downSample, axis=1)
+            # dtype = newim.dtype
+            # newim = skimage.transform.rescale(newim, self._downSample, preserve_range=True).astype(dtype)
         return newim
 
     def processPixmap(self):
