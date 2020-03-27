@@ -2,11 +2,11 @@ from __future__ import annotations
 from PyQt5 import QtCore
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QDialog, QWidget, QCheckBox, QVBoxLayout, QComboBox, QTabWidget, QDoubleSpinBox, QGridLayout, QLabel
-from constants import Methods
+from nadetector.constants import Methods
 import typing
 if typing.TYPE_CHECKING:
-    from hardware.cameraManager import CameraManager
-    from widgets.cameraView import CircleOverlayCameraView
+    from nadetector.hardware import CameraManager
+    from nadetector.widgets.cameraView import CircleOverlayCameraView
 
 
 class AdvancedSettingsDialog(QDialog):
