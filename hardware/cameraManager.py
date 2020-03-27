@@ -34,7 +34,7 @@ class CameraManager(QObject):
     def _waitForFrame(self):
         ready = self._cam.wait_for_frame(timeout='0 ms')
         if ready and self.isRunning:
-            self.frameReady.emit(self._cam.latest_frame(copy=False))
+            self.frameReady.emit(self._cam.latest_frame())
 
     def setAutoExposure(self, enabled: bool):
         self._aeEnabled = enabled

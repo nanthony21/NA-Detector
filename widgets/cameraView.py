@@ -112,7 +112,7 @@ class CircleOverlayCameraView(CameraView):
         self.preOptFitOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QtCore.Qt.red, 0, 0, 0)
 
         self._downSample = 1
-        self.method = Methods.HoughTransform
+        self.method = Methods.LiMinimization
 
         self._overlays: List[Overlay] = [self.preOptFitOverlay]
         super().__init__(camera)
