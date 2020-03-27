@@ -41,7 +41,7 @@ def initialGuessCircle(binary: np.ndarray):
 
 
 def fitCircle(binar: np.ndarray, x0, y0, r0) -> Tuple[float, float, float]:
-    def cost(args: (float, float, float)): #We have to use args here rather than individual arguments because of out the sp.optimize function works. the binarized image is included in the function using closure.
+    def cost(args: (float, float, float)): #We have to use args here rather than individual arguments because of how the sp.optimize function works. the binarized image is included in the function using closure.
         """Calculate the cost to be minimized which in this case is the negative of the number of pixels that overlap between our circle(x,y,r) and the binary image."""
         x, y, r = args
         coords = sk.draw.circle(y, x, r, shape=binar.shape)
@@ -52,7 +52,7 @@ def fitCircle(binar: np.ndarray, x0, y0, r0) -> Tuple[float, float, float]:
         # print(err)
         return -(err) #The score is the number of pixels that are correct. should this be changed?
     
-    result = sp.optimize.minimize(cost, x0=(x0, y0, r0), method='BFGS', jac=None, options={'disp': True, 'eps': 10})
+    result = sp.optimize.minimize(cost, x0=(x0, y0, r0), method='COBYLA', jac=None, options={'disp': False, 'eps': 10})
     X, Y, R = tuple(result.x)
     # print(result.success)
     # print(X,Y,R)
