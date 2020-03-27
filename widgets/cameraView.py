@@ -35,7 +35,7 @@ class CameraView(QLabel):
         self.isRunning = False
         self.rawArray = None
         self.processedArray = None
-        self.grab_image()
+        self.grab_image(withProcessing=False)
 
 
     def refresh(self):
@@ -45,9 +45,12 @@ class CameraView(QLabel):
     def processImage(self, im: np.ndarray, **kwargs) -> np.ndarray:
         return im  # This class is to be overridden by inheriting classes.
 
-    def grab_image(self):
+    def grab_image(self, withProcessing=True):
         self.rawArray = self.camera.grab_image()
-        self.processedArray = self.processImage(self.rawArray, block=True)
+        if withProcessing:
+            self.processedArray = self.processImage(self.rawArray, block=True)
+        else:
+            self.processedArray = self.rawArray
         self._set_pixmap_from_array(self.processedArray)
         self.processPixmap()
 
@@ -106,7 +109,7 @@ class CircleOverlayCameraView(CameraView):
         self.fitQ = Queue(maxsize=1)
         self.fitThread = None
         self.displayPreProcessed = False
-        self.preOptFitOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QtCore.Qt.darkBlue, 0, 0, 0)
+        self.preOptFitOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QtCore.Qt.red, 0, 0, 0)
 
         self._downSample = 1
         self.method = Methods.HoughTransform
