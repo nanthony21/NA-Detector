@@ -52,7 +52,7 @@ def fitCircle(binar: np.ndarray, x0, y0, r0) -> Tuple[float, float, float]:
         # print(err)
         return -(err) #The score is the number of pixels that are correct. should this be changed?
     
-    result = sp.optimize.minimize(cost, x0=(x0, y0, r0), method='COBYLA', jac=None, options={'disp': False, 'eps': 10})
+    result = sp.optimize.minimize(cost, x0=(x0, y0, r0), method='COBYLA', jac=None, options={'disp': False})
     X, Y, R = tuple(result.x)
     # print(result.success)
     # print(X,Y,R)
