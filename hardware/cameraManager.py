@@ -33,7 +33,7 @@ class CameraManager(QObject):
 
     def _waitForFrame(self):
         ready = self._cam.wait_for_frame(timeout='0 ms')
-        if ready:
+        if ready and self.isRunning:
             self.frameReady.emit(self._cam.latest_frame(copy=False))
 
     def setAutoExposure(self, enabled: bool):
@@ -51,7 +51,7 @@ class CameraManager(QObject):
         self._exposure = exp
         if self.isRunning:
             self.stop_live_video()
-            time.sleep(oldexp/1000 + 0.1)  # This delay helps prevent a hard crash. Still happens sometimes though. Makes things laggy during autoexposure
+#            time.sleep(oldexp/1000 + 0.1)  # This delay helps prevent a hard crash. Still happens sometimes though. Makes things laggy during autoexposure
             self.start_live_video()  # This is to update the exposure used.
         self.exposureChanged.emit(self._exposure)
 

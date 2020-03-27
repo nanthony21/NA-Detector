@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# Copyright 2015-2017 Nate Bogdanowicz
 """
 A very simple GUI that uses a CameraView to view live video from a camera.
 """
