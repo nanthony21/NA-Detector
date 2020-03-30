@@ -260,7 +260,7 @@ class FittingWidget(QFrame):
         self.objectiveOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QPen(QtCore.Qt.blue), 0, 0, 0)
         self.targetOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QPen(QtCore.Qt.green), 0, 0, 0)
         self.measuredOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QPen(QtCore.Qt.red), 0, 0, 0)
-        [i.pen.setWidth(2) for i in [self.objectiveOverlay, self.targetOverlay, self.measuredOverlay]]  # Make the outlines bit thicker
+        [i.pen.setWidth(3) for i in [self.objectiveOverlay, self.targetOverlay]]  # Make the outlines bit thicker.
         parent.cameraView.addOverlay(self.objectiveOverlay)
         parent.cameraView.addOverlay(self.targetOverlay)
         parent.cameraView.addOverlay(self.measuredOverlay)
