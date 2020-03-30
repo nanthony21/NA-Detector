@@ -1,3 +1,4 @@
 nadetector/lextab.py
 .*__pycache__.*
 __pycache__/
+nadetector/yacctab.py
