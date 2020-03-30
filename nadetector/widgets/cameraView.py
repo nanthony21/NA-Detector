@@ -88,7 +88,7 @@ class CameraView(QLabel):
 
     def _displayNewFrame(self, frame):
         self.camera.frameReady.disconnect(self._displayNewFrame)
-        self.rawArray = frame
+        self.rawArray = frame.copy()
         self.processedArray = self.processImage(self.rawArray, block=False)
         self._set_pixmap_from_array(self.processedArray)
         self.processPixmap()

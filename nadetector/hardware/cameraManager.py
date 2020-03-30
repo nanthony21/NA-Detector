@@ -1,6 +1,7 @@
 from PyQt5.QtCore import QTimer, pyqtSignal, QObject
 from instrumental.drivers.cameras import Camera
 import time
+import os
 import numpy as np
 
 # def log(n):
@@ -28,7 +29,7 @@ class CameraManager(QObject):
         self._aeTimer.timeout.connect(self._runAutoExpose)
         self._frameGrabTimer = QTimer()
         self._frameGrabTimer.setSingleShot(False)
-        self._frameGrabTimer.setInterval(1)
+        self._frameGrabTimer.setInterval(50)
         self._frameGrabTimer.timeout.connect(self._waitForFrame)
 
     def _waitForFrame(self):
@@ -77,12 +78,6 @@ class CameraManager(QObject):
         self._frameGrabTimer.stop()
         self._cam.stop_live_video()
 
-    # def wait_for_frame(self, **kwargs):
-    #     return self._cam.wait_for_frame(**kwargs)
-
-    # def latest_frame(self, **kwargs):
-    #     return self._cam.latest_frame(**kwargs)
-
     @property
     def width(self):
         return self._cam.width
@@ -98,7 +93,7 @@ class CameraManager(QObject):
                 frameReady = False # We have to get a fresh frame to make sure it's actually at the correct exposure.
                 while not frameReady:
                     frameReady = self._cam.wait_for_frame(timeout='0 ms')
-                arr = self._cam.latest_frame(copy=False)
+                arr = self._cam.latest_frame(copy=True)
                 self.frameReady.emit(arr)
             else:
                 arr = self.grab_image()
