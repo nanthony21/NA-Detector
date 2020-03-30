@@ -1,5 +1,6 @@
 from __future__ import annotations
 from PyQt5 import QtCore
+from PyQt5.QtGui import QFont, QPen, QPalette
 from PyQt5.QtWidgets import QWidget, QDoubleSpinBox, QPushButton, QVBoxLayout, QLabel, QGridLayout, QFrame, QCheckBox
 from nadetector.widgets.cameraView import CircleCenterOverlay
 
@@ -16,7 +17,14 @@ class FittingWidget(QFrame):
         self.objectiveX = QDoubleSpinBox(self)
         self.objectiveY = QDoubleSpinBox(self)
         self.measureObjectiveButton = QPushButton("Measure Reference Aperture", self)
-        displayCheckbox = QCheckBox("Display Overlay", self)
+        displayCheckbox = QCheckBox("Display Overlay ->", self)
+
+        overlayColorPatch = QWidget(self)
+        pal = QPalette()
+        pal.setColor(QPalette.Background, self.objectiveOverlay.pen.color())
+        overlayColorPatch.setAutoFillBackground(True)
+        overlayColorPatch.setPalette(pal)
+
         # configure limits
         for i in [self.objectiveD, self.objectiveX, self.objectiveY]:
             i.setMinimum(0)
@@ -81,17 +89,26 @@ class FittingWidget(QFrame):
         gl.addWidget(self.objectiveY, 1, 2)
         gl.addWidget(QLabel("NA:"), 2, 0)
         gl.addWidget(self.objectiveNA, 2, 1, 1, 2)
-        gl.addWidget(displayCheckbox, 3, 0, 1, 3)
+        gl.addWidget(displayCheckbox, 3, 0, 1, 2)
+        gl.addWidget(overlayColorPatch, 3, 2, 1, 1)
         gl.addWidget(self.measureObjectiveButton, 4, 0, 1, 3)
         return gl
 
     def setupMeasurePanel(self) -> QGridLayout:
         self.measD = QDoubleSpinBox(self)
         self.measNA = QLabel('0', self)
+        self.measNA.setFont(QFont('Arial', pointSize=18))
+        self.measNA.font().setBold(True)
         self.measX = QDoubleSpinBox(self)
         self.measY = QDoubleSpinBox(self)
         self.measureApertureCheckbox = QCheckBox("Measure Aperture", self)
-        displayCheckbox = QCheckBox("Display Overlay", self)
+        displayCheckbox = QCheckBox("Display Overlay ->", self)
+
+        overlayColorPatch = QWidget(self)
+        pal = QPalette()
+        pal.setColor(QPalette.Background, self.measuredOverlay.pen.color())
+        overlayColorPatch.setAutoFillBackground(True)
+        overlayColorPatch.setPalette(pal)
 
         # configure limits
         for i in [self.measX, self.measY, self.measD]:
@@ -144,7 +161,8 @@ class FittingWidget(QFrame):
         gl.addWidget(self.measY, 1, 2)
         gl.addWidget(QLabel("NA:"), 2, 0)
         gl.addWidget(self.measNA, 2, 1)
-        gl.addWidget(displayCheckbox, 3, 0, 1, 3)
+        gl.addWidget(displayCheckbox, 3, 0, 1, 2)
+        gl.addWidget(overlayColorPatch, 3, 2, 1, 1)
         gl.addWidget(self.measureApertureCheckbox, 4, 0, 1, 3)
         return gl
 
@@ -154,7 +172,14 @@ class FittingWidget(QFrame):
         self.targetX = QDoubleSpinBox(self)
         self.targetY = QDoubleSpinBox(self)
         self.centerTargetButton = QPushButton("Center to Reference", self)
-        displayCheckBox = QCheckBox("Display Overlay", self)
+        displayCheckBox = QCheckBox("Display Overlay ->", self)
+
+        overlayColorPatch = QWidget(self)
+        pal = QPalette()
+        pal.setColor(QPalette.Background, self.targetOverlay.pen.color())
+        overlayColorPatch.setAutoFillBackground(True)
+        overlayColorPatch.setPalette(pal)
+
         # configure limits
         for i in [self.targetD, self.targetX, self.targetY]:
             i.setMinimum(0)
@@ -218,7 +243,8 @@ class FittingWidget(QFrame):
         gl.addWidget(self.targetY, 1, 2)
         gl.addWidget(QLabel("NA:"), 2, 0)
         gl.addWidget(self.targetNA, 2, 1, 1, 2)
-        gl.addWidget(displayCheckBox, 3, 0, 1, 3)
+        gl.addWidget(displayCheckBox, 3, 0, 1, 2)
+        gl.addWidget(overlayColorPatch, 3, 2, 1, 1)
         gl.addWidget(self.centerTargetButton, 4, 0, 1, 3)
         return gl
 
@@ -231,9 +257,10 @@ class FittingWidget(QFrame):
 
         self._naPerPix = 0
 
-        self.objectiveOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QtCore.Qt.blue, 0, 0, 0)
-        self.targetOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QtCore.Qt.green, 0, 0, 0)
-        self.measuredOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QtCore.Qt.cyan, 0, 0, 0)
+        self.objectiveOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QPen(QtCore.Qt.blue), 0, 0, 0)
+        self.targetOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QPen(QtCore.Qt.green), 0, 0, 0)
+        self.measuredOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QPen(QtCore.Qt.red), 0, 0, 0)
+        [i.pen.setWidth(2) for i in [self.objectiveOverlay, self.targetOverlay, self.measuredOverlay]]  # Make the outlines bit thicker
         parent.cameraView.addOverlay(self.objectiveOverlay)
         parent.cameraView.addOverlay(self.targetOverlay)
         parent.cameraView.addOverlay(self.measuredOverlay)
