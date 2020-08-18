@@ -153,6 +153,9 @@ class FittingWidget(QFrame):
             updateOverlay()
         self.measD.valueChanged.connect(measChanged)
 
+        self.measX.valueChanged.connect(updateOverlay)
+        self.measY.valueChanged.connect(updateOverlay)
+
         gl = QGridLayout()
         gl.addWidget(QLabel("Diameter (px):"), 0, 0)
         gl.addWidget(self.measD, 0, 1)
