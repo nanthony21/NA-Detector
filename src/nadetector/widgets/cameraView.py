@@ -15,11 +15,11 @@ from abc import ABC, abstractmethod
 
 from skimage.transform import downscale_local_mean
 
-from nadetector.analysis import binarizeImageLi, binarizeImageOtsu, initialGuessCircle, fitCircle, fitCircleHough, detectEdges
-from nadetector.constants import Methods
+from src.nadetector.analysis import binarizeImageLi, binarizeImageOtsu, initialGuessCircle, fitCircle, fitCircleHough, detectEdges
+from src.nadetector.constants import Methods
 import typing
 if typing.TYPE_CHECKING:
-    from nadetector.hardware import CameraManager
+    from src.nadetector.hardware import CameraManager
 
 
 class CameraView(QLabel):

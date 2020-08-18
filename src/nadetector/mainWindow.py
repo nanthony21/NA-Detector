@@ -2,13 +2,13 @@ from __future__ import annotations
 from PyQt5.QtCore import QPoint
 from PyQt5.QtWidgets import QMainWindow, QPushButton, QVBoxLayout, QWidget, QGridLayout, QHBoxLayout, QLabel
 
-from nadetector.hardware import CameraManager
-from nadetector.widgets import AdvancedSettingsDialog
-from nadetector.widgets.aspectRatioWidget import AspectRatioWidget
-from nadetector.widgets.fittingWidget import FittingWidget
+from src.nadetector.hardware import CameraManager
+from src.nadetector import AdvancedSettingsDialog
+from src.nadetector.widgets.aspectRatioWidget import AspectRatioWidget
+from src.nadetector.widgets.fittingWidget import FittingWidget
 import typing
 if typing.TYPE_CHECKING:
-    from nadetector.widgets.cameraView import CircleOverlayCameraView
+    from src.nadetector.widgets.cameraView import CircleOverlayCameraView
 
 
 class Window(QMainWindow):

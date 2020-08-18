@@ -1,0 +1,39 @@
+
+package:
+  name: nadetector
+  version: 0.0.1
+
+source:
+  path: .. #tells conda-build that the source code is in the parent directory.
+
+build:
+  noarch: python
+  number: {{ GIT_DESCRIBE_NUMBER }}
+  string: {{environ['GIT_DESCRIBE_HASH']}}
+  entry_points:
+    - NADetector = nadetector.__main__:main   # We must have an entry point specified for each entry point in setup.py or the noarch conda build will fail.
+
+requirements:
+  build:
+    - python
+    - setuptools
+
+  run:
+    - PyQt5
+    - Instrumental-lib
+    - scikit-image
+    - pywin32
+    - nicelib
+
+app:
+  entry: NADetector
+  summary: PWS NA Calibration GUI
+  type: desk
+  own_environment: False
+
+about:
+  home: https://bitbucket.org/backmanlab/nadetector/src/master/
+  summary: "A for measuring NA with a bertrand telescope."
+  description: "A for measuring NA with a bertrand telescope."
+  dev_url: https://bitbucket.org/backmanlab/nadetector/src/master/
+

@@ -2,11 +2,11 @@ from __future__ import annotations
 from PyQt5 import QtCore
 from PyQt5.QtGui import QFont, QPen, QPalette
 from PyQt5.QtWidgets import QWidget, QDoubleSpinBox, QPushButton, QVBoxLayout, QLabel, QGridLayout, QFrame, QCheckBox
-from nadetector.widgets.cameraView import CircleCenterOverlay
+from src.nadetector.widgets.cameraView import CircleCenterOverlay
 
 import typing
 if typing.TYPE_CHECKING:
-    from nadetector.mainWindow import Window
+    from src.nadetector.mainWindow import Window
 
 
 class FittingWidget(QFrame):

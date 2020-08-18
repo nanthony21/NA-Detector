@@ -1,0 +1,11 @@
+{
+    "menu_name": "Anaconda${PY_VER} ${PLATFORM}",
+    "menu_items":
+    [
+        {
+            "name": "PWS NA Detector",
+            "pyscript": "${PYTHON_SCRIPTS}/NADetector-script.py",
+            "workdir": "${USERPROFILE}",
+        }
+    ]
+}

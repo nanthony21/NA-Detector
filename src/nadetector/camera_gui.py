@@ -13,7 +13,7 @@ from .hardware.cameraManager import CameraManager
 from .mainWindow import Window
 from .widgets.cameraView import CircleOverlayCameraView
 
-os.environ['PATH'] += os.path.abspath('../lib') #This makes is so that the Camera driver DLL can be found.
+os.environ['PATH'] += os.path.abspath('../../lib') #This makes is so that the Camera driver DLL can be found.
 
 
 class App(QApplication):

@@ -12,5 +12,8 @@ setup(
         'scikit-image',
         'pywin32',
         'nicelib'
-    ]
+    ],
+    entry_points={'gui_scripts': [
+        'NADetector = nadetector.__main__:main',
+    ]}
 )
