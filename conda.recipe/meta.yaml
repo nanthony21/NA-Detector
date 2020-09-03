@@ -19,11 +19,9 @@ requirements:
     - setuptools
 
   run:
-    - PyQt5
-    - Instrumental-lib
+    - pyqt
     - scikit-image
     - pywin32
-    - nicelib
 
 app:
   entry: NADetector
