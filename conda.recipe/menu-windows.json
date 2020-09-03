@@ -4,8 +4,8 @@
     [
         {
             "name": "PWS NA Detector",
-            "pyscript": "${PYTHON_SCRIPTS}/NADetector-script.py",
-            "workdir": "${USERPROFILE}",
+            "pyscript": "${PYTHON_SCRIPTS}/nadetector-script.py",
+            "workdir": "${USERPROFILE}"
         }
     ]
 }

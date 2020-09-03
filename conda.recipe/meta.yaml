@@ -11,7 +11,7 @@ build:
   number: {{ GIT_DESCRIBE_NUMBER }}
   string: {{environ['GIT_DESCRIBE_HASH']}}
   entry_points:
-    - NADetector = nadetector.__main__:main   # We must have an entry point specified for each entry point in setup.py or the noarch conda build will fail.
+    - nadetector = nadetector.__main__:main   # We must have an entry point specified for each entry point in setup.py or the noarch conda build will fail.
 
 requirements:
   build:
@@ -24,7 +24,7 @@ requirements:
     - pywin32
 
 app:
-  entry: NADetector
+  entry: nadetector
   summary: PWS NA Calibration GUI
   type: desk
   own_environment: False

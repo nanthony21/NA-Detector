@@ -5,7 +5,7 @@ import sys
 import os
 
 def main():
-    os.environ['PATH'] += os.path.abspath('../drivers')  # This makes is so that the Camera driver DLL can be found.
+    os.environ['PATH'] += ';' + os.path.join(os.path.dirname(__file__), 'drivers')  # This makes is so that the Camera driver DLL can be found.
 
     test = False
 
