@@ -2,9 +2,11 @@ from instrumental import instrument, list_instruments
 from nadetector.hardware import TestCamera
 from nadetector.camera_gui import App
 import sys
-
+import os
 
 def main():
+    os.environ['PATH'] += os.path.abspath('../drivers')  # This makes is so that the Camera driver DLL can be found.
+
     test = False
 
     def tracefunc(frame, event, arg, indent=[0]):

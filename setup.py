@@ -15,5 +15,6 @@ setup(
     ],
     entry_points={'gui_scripts': [
         'NADetector = nadetector.__main__:main',
-    ]}
+    ]},
+    package_data={'NADetector': ['drivers/uc480_64.dll']},
 )
