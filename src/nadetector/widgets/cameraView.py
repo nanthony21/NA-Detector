@@ -8,7 +8,7 @@ import scipy
 import skimage
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import QTimer, pyqtSignal
-from PyQt5.QtGui import QImage, QPixmap, QPainter, QPen, QBrush
+from PyQt5.QtGui import QImage, QPixmap, QPainter, QPen, QBrush, QColor
 from PyQt5.QtWidgets import QLabel, QSizePolicy
 
 from abc import ABC, abstractmethod
@@ -109,7 +109,7 @@ class CircleOverlayCameraView(CameraView):
         self.fitQ = Queue(maxsize=1)
         self.fitThread = None
         self.displayPreProcessed = False
-        self.preOptFitOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QtCore.Qt.red, 0, 0, 0)
+        self.preOptFitOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QtCore.Qt.red, 0, 0, 0)  # An overlay used for debug purposes to see the initial guess of the aperture circle before optimization.
 
         self._downSample = 1
         self.method = Methods.LiMinimization
@@ -218,40 +218,108 @@ class CircleOverlayCameraView(CameraView):
         self._downSample = ds
 
 class Overlay(ABC):
-    def __init__(self, brush, pen):
+    """
+    A base class for an overlay drawn on a QWidget
+    """
+    def __init__(self, brush: typing.Union[QBrush, QtCore.Qt.BrushStyle], pen: typing.Union[QPen, QtCore.Qt.PenStyle, QColor]):
         self.brush = brush
         self.pen = pen
         self.active = False
 
     @abstractmethod
     def draw(self, painter: QPainter):
+        """Use the painter passed to this method to draw the shape on the QWidget"""
         pass
 
 
 class CircleOverlay(Overlay):
-    def __init__(self, brush, pen, x, y, r):
+    """
+    A simple circular overlay.
+
+    Args:
+        brush: The brush that determines the line style of the overlay.
+        pen: The pen that determines the color of the overlay.
+        x, y, r: The initial coordinates of the overlaid circle.
+    """
+    def __init__(self, brush: typing.Union[QBrush, QtCore.Qt.BrushStyle], pen: typing.Union[QPen, QtCore.Qt.PenStyle, QColor], x: float, y: float, r: float):
         super().__init__(brush, pen)
         self.x = x
         self.y = y
         self.r = r
 
-    def setCoords(self, x, y, r):
+    def setCoords(self, x: float, y: float, r: float):
+        """
+        Change the coordinates of the overlay.
+
+        Args:
+            x: Initial X coord of circle
+            y: Initial Y coord of circle
+            r: Initial radius of circle
+        """
         self.x = x
         self.y = y
         self.r = r
 
-    def draw(self, painter):
+    def draw(self, painter: QPainter):
         painter.setBrush(self.brush)
         painter.setPen(self.pen)
         painter.drawEllipse(self.x-self.r, self.y-self.r, self.r*2, self.r*2)
 
 
 class CircleCenterOverlay(CircleOverlay):
-    def __init__(self, brush, pen, x, y, r):
-        super().__init__(brush, pen, x, y, r)
-        self.len = 10
+    """
+    A circular overlay with a crosshair at the center.
 
-    def draw(self, painter):
+    Args:
+        brush: The brush that determines the line style of the overlay.
+        pen: The pen that determines the color of the overlay.
+        x, y, r: The initial coordinates of the overlaid circle.
+    """
+    def __init__(self, brush: typing.Union[QBrush, QtCore.Qt.BrushStyle], pen: typing.Union[QPen, QtCore.Qt.PenStyle, QColor], x: float, y: float, r: float):
+        super().__init__(brush, pen, x, y, r)
+        self.len = 10  # The length of a single line in the crosshair.
+
+    def draw(self, painter: QPainter):
         super().draw(painter)
         painter.drawLine(self.x-self.len, self.y, self.x+self.len, self.y)
         painter.drawLine(self.x, self.y-self.len, self.x, self.y+self.len)
+
+
+class RectangleOverlay(Overlay):
+    """
+    A simple rectangular overlay.
+
+    Args:
+        brush: The brush that determines the line style of the overlay.
+        pen: The pen that determines the color of the overlay.
+        x, y: The initial coordinates of the top left corner of the rectangle.
+        w: The width of the rectangle.
+        h: The height of the rectangle.
+    """
+    def __init__(self, brush: typing.Union[QBrush, QtCore.Qt.BrushStyle], pen: typing.Union[QPen, QtCore.Qt.PenStyle, QColor], x: float, y: float, w: float, h: float):
+        super().__init__(brush, pen)
+        self._x = x
+        self._y = y
+        self._w = w
+        self._h = h
+
+    def setTopLeftCorner(self, x: float, y: float):
+        """Move the origin (top left corner) of the rectangle.
+
+        Args:
+            x: The x coordinate.
+            y: The y coordinate.
+        """
+        self._x = x
+        self._y = y
+
+    def setWidth(self, width: float):
+        self._w = width
+
+    def setHeight(self, height: float):
+        self._h = height
+
+    def draw(self, painter: QPainter):
+        painter.setBrush(self.brush)
+        painter.setPen(self.pen)
+        painter.drawRect(self._x, self._y, self._w, self._h)
