@@ -135,7 +135,6 @@ class CircleOverlayCameraView(CameraView):
         x, y = self._mapWidgetCoordToPixel(ev.x(), ev.y())
         ov = CircleOverlay(QtCore.Qt.NoBrush, QtCore.Qt.red, x, y, 1)
         ov.active = True
-        self.graphicsProxyWidget()
         self.addOverlay(ov)
 
     def mouseMoveEvent(self, ev: QtGui.QMouseEvent) -> None:

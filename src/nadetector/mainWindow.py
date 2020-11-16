@@ -51,9 +51,9 @@ class Window(QMainWindow):
         def showAdvanced():
             self.advancedDlg.show()
 
-            # Move dialog to the side
+            # Move dialog to the top of the "advanced" button
             rect = self.advancedDlg.geometry()
-            newPoint = self.mapToGlobal(QPoint(-rect.width(), 0))
+            newPoint = self.advancedButton.mapToGlobal(QPoint(0, -rect.height()))
             rect.moveTo(newPoint)
             self.advancedDlg.setGeometry(rect)
 
