@@ -99,7 +99,7 @@ class CameraManager(QObject):
                 arr = self.grab_image()
             if arr is None:
                 return  # This can sometime happen when the video is stopped.
-            m = np.percentile(arr, 99.5)
+            m = np.percentile(arr, 99.7)
             if m >= 255:
                 newExp = self._exposure * 0.8
             elif abs(target - m) > 5:  # Don't do anything if we're within a decent window.

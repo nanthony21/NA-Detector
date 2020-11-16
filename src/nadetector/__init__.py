@@ -1,0 +1,1 @@
+# TODO allow zooming in and out, crop the unused edges of the image.

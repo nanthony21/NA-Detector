@@ -132,10 +132,12 @@ class CircleOverlayCameraView(CameraView):
         return x, y
 
     def mousePressEvent(self, ev: QtGui.QMouseEvent) -> None:
-        x, y = self._mapWidgetCoordToPixel(ev.x(), ev.y())
-        ov = CircleOverlay(QtCore.Qt.NoBrush, QtCore.Qt.red, x, y, 1)
-        ov.active = True
-        self.addOverlay(ov)
+        pass
+        #Testing purposes only, draw a 1 pixel radius circle at the mouse click.
+        # x, y = self._mapWidgetCoordToPixel(ev.x(), ev.y())
+        # ov = CircleOverlay(QtCore.Qt.NoBrush, QtCore.Qt.red, x, y, 1)
+        # ov.active = True
+        # self.addOverlay(ov)
 
     def mouseMoveEvent(self, ev: QtGui.QMouseEvent) -> None:
         x, y = self._mapWidgetCoordToPixel(ev.x(), ev.y())
