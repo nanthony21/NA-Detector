@@ -1,6 +1,6 @@
 from __future__ import annotations
 from PyQt5 import QtCore
-from PyQt5.QtGui import QFont, QPen, QPalette
+from PyQt5.QtGui import QFont, QPen, QPalette, QColor
 from PyQt5.QtWidgets import QWidget, QDoubleSpinBox, QPushButton, QVBoxLayout, QLabel, QGridLayout, QFrame, QCheckBox
 from nadetector.widgets.cameraView import CircleCenterOverlay
 
@@ -260,10 +260,14 @@ class FittingWidget(QFrame):
 
         self._naPerPix = 0
 
-        self.objectiveOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QPen(QtCore.Qt.blue), 0, 0, 0)
-        self.targetOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QPen(QtCore.Qt.green), 0, 0, 0)
-        self.measuredOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QPen(QtCore.Qt.red), 0, 0, 0)
-        [i.pen.setWidth(3) for i in [self.objectiveOverlay, self.targetOverlay]]  # Make the outlines bit thicker.
+        transparency = 170  # 255 would be solid, 0 would be invisible
+        blue = QColor(0, 0, 255, alpha=transparency)
+        green = QColor(0, 255, 0, alpha=transparency)
+        red = QColor(255, 0, 0, alpha=transparency)
+
+        self.objectiveOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QPen(blue), 0, 0, 0)
+        self.targetOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QPen(green), 0, 0, 0)
+        self.measuredOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QPen(red), 0, 0, 0)
         parent.cameraView.addOverlay(self.objectiveOverlay)
         parent.cameraView.addOverlay(self.targetOverlay)
         parent.cameraView.addOverlay(self.measuredOverlay)
