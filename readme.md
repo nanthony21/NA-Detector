@@ -4,4 +4,4 @@ Aperture diameter can be automatically measured using a variety of methods. By m
 then guide the user towards aligning the aperture with the target NA.
 
 ## Installation
-This Python package is not currently available online via Pypi or Conda. To install please download the source code and then install from source using `pip install .` or `python install setup.py`
+This Python package is not currently automatically uploaded online to Pypi or Conda. It has been uploaded manually to the `backmanlab` anaconda cloud channel so it can be installed via Conda with `conda install -c backmanlab na-detector`. To install from source please download the source code and then install using `pip install .` or `python install setup.py`
