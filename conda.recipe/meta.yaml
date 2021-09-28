@@ -30,8 +30,8 @@ app:
   own_environment: False
 
 about:
-  home: https://bitbucket.org/backmanlab/nadetector/src/master/
-  summary: "A for measuring NA with a bertrand telescope."
-  description: "A for measuring NA with a bertrand telescope."
-  dev_url: https://bitbucket.org/backmanlab/nadetector/src/master/
+  home: https://github.com/nanthony21/NA-Detector
+  summary: "A GUI for measuring the NA of a microscope with a bertrand telescope."
+  description: "A GUI for measuring the NA of a microscope with a bertrand telescope."
+  dev_url: https://github.com/nanthony21/NA-Detector
 
