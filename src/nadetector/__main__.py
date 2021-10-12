@@ -1,6 +1,6 @@
 from instrumental import instrument, list_instruments
 from nadetector.hardware import TestCamera
-from nadetector.camera_gui import App
+from nadetector.app import App
 import sys
 import os
 

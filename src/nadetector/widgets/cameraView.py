@@ -9,7 +9,7 @@ import skimage
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import QTimer, pyqtSignal
 from PyQt5.QtGui import QImage, QPixmap, QPainter, QPen, QBrush, QColor
-from PyQt5.QtWidgets import QLabel, QSizePolicy
+from PyQt5.QtWidgets import QLabel, QSizePolicy, QGraphicsView, QGraphicsScene
 
 from abc import ABC, abstractmethod
 
@@ -20,6 +20,55 @@ from nadetector.constants import Methods
 import typing
 if typing.TYPE_CHECKING:
     from nadetector.hardware import CameraManager
+
+
+class ZoomableView(QGraphicsView):
+    """This is a version of QGraphicsView that takes a Qt FigureCanvas from matplotlib and automatically resized the
+    canvas to fill as much of the view as possible. A debounce timer is used to prevent lag due to attempting the resize
+    the canvas too quickly. This allows for relatively smooth operation. This is essential for us to include a matplotlib
+    plot that can maintain it's aspect ratio within a Qt layout.
+
+    Args:
+        plot: A matplotlib FigureCanvas that is compatible with Qt (FigureCanvasQT or FigureCanvasQTAgg)
+
+    """
+    def __init__(self, imageView: CameraView):
+        super().__init__()
+        scene = QGraphicsScene(self)
+        scene.addWidget(imageView)
+        self.setScene(scene)
+        self._scaleFactor = 1
+
+    def wheelEvent(self, event: QtGui.QWheelEvent) -> None:
+        """
+        Scale the view on mouse scroll
+        """
+        scaleFactor = 1 + (event.angleDelta().y() / 600)
+        # Limit zoom to a reasonable range.
+        if scaleFactor > 1 and self._scaleFactor > 10:
+            return
+        elif scaleFactor < 1 and self._scaleFactor < .8:
+            return
+        self.scale(scaleFactor, scaleFactor)
+        self._scaleFactor = self._scaleFactor * scaleFactor  #  Keep track of current scaling factor
+
+
+    # def _resizePlot(self):
+    #     """This method is indirectly called by the resizeEvent through the debounce timer and sets the size of the plot
+    #     to maximize its size without changing aspect ratio."""
+    #     w, h = self.size().width(), self.size().height()
+    #     r = self.scene().sceneRect()
+    #     s = min([w, h])  # Get the side length of the biggest square that can fit within the rectangle view area.
+    #     self.plot.resize(s, s)  # Set the plot to the size of the square that fits in view.
+    #     r.setSize(QSizeF(s, s))
+    #     self.scene().setSceneRect(r)  # Set the scene size to the square that fits in view.
+    #
+    # def resizeEvent(self, event: QtGui.QResizeEvent):
+    #     """Every time that the view is resized this event will fire and start the debounce timer. The timer will only
+    #     actually time out if this event doesn't restart it within the timeout period."""
+    #     self._debounce.start()
+    #     super().resizeEvent(event)
+    #
 
 
 class CameraView(QLabel):
@@ -36,7 +85,6 @@ class CameraView(QLabel):
         self.rawArray = None
         self.processedArray = None
         self.grab_image(withProcessing=False)
-
 
     def refresh(self):
         self._set_pixmap_from_array(self.processedArray)
@@ -83,8 +131,8 @@ class CameraView(QLabel):
                 raise Exception("Unsupported color mode")
         self._saved_img = arr  # Save a reference to keep Qt from crashing. I don't think this is necessary
         image = QImage(arr.data, arr.shape[1], arr.shape[0], bpl, fmt)
-
-        self.setPixmap(QPixmap.fromImage(image))
+        pm = QPixmap.fromImage(image)
+        self.setPixmap(pm)
 
     def _displayNewFrame(self, frame):
         self.camera.frameReady.disconnect(self._displayNewFrame)
@@ -142,6 +190,7 @@ class CircleOverlayCameraView(CameraView):
     def mouseMoveEvent(self, ev: QtGui.QMouseEvent) -> None:
         x, y = self._mapWidgetCoordToPixel(ev.x(), ev.y())
         self.mouseMoved.emit(x, y)
+        super().mouseMoveEvent(ev)
 
     def measureCircle(self, q: Queue, im):
         if self._downSample != 1:
@@ -218,6 +267,7 @@ class CircleOverlayCameraView(CameraView):
 
     def setDownSampling(self, ds: int):
         self._downSample = ds
+
 
 class Overlay(ABC):
     """
