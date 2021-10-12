@@ -7,7 +7,7 @@ import os
 def main():
     os.environ['PATH'] += ';' + os.path.join(os.path.dirname(__file__), 'drivers')  # This makes is so that the Camera driver DLL can be found.
 
-    test = False
+    test: bool = True  # If true then use a simulated camera.
 
     def tracefunc(frame, event, arg, indent=[0]):
         if event == "call":
@@ -17,9 +17,6 @@ def main():
             print("<" + "-" * indent[0], "exit function", frame.f_code.co_name)
             indent[0] -= 2
         return tracefunc
-
-
-
 
     cam = None
     if test:

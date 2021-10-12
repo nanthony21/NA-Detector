@@ -10,8 +10,71 @@ if typing.TYPE_CHECKING:
 
 
 class FittingWidget(QFrame):
+    def __init__(self, parent: Window = None):
+        super().__init__(parent)
+        self.parentWindow = parent
+        self.setFrameShape(QFrame.StyledPanel)
 
-    def setupObjectivePanel(self) -> QGridLayout:
+        self._naPerPix = 0
+
+        transparency = 170  # 255 would be solid, 0 would be invisible
+        blue = QColor(0, 0, 255, alpha=transparency)
+        green = QColor(0, 255, 0, alpha=transparency)
+        red = QColor(255, 0, 0, alpha=transparency)
+
+        self.objectiveOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QPen(blue), 0, 0, 0)
+        self.targetOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QPen(green), 0, 0, 0)
+        self.measuredOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QPen(red), 0, 0, 0)
+        parent.cameraView.addOverlay(self.objectiveOverlay)
+        parent.cameraView.addOverlay(self.targetOverlay)
+        parent.cameraView.addOverlay(self.measuredOverlay)
+
+        l = QVBoxLayout()
+        l.setAlignment(QtCore.Qt.AlignTop)
+        lab = QLabel("Reference:")
+        f = lab.font()
+        f.setBold(True)
+        lab.setFont(f)
+        l.addWidget(lab)
+        gl = self._setupObjectivePanel()
+        f = QFrame(self)
+        f.setFrameShape(QFrame.StyledPanel)
+        f.setLayout(gl)
+        l.addWidget(f)
+        lab = QLabel("Target:")
+        f = lab.font()
+        f.setBold(True)
+        lab.setFont(f)
+        l.addWidget(lab)
+        gl = self._setupTargetPanel()
+        f = QFrame(self)
+        f.setFrameShape(QFrame.StyledPanel)
+        f.setLayout(gl)
+        l.addWidget(f)
+        lab = QLabel("Measured:")
+        f = lab.font()
+        f.setBold(True)
+        lab.setFont(f)
+        l.addWidget(lab)
+        gl = self._setupMeasurePanel()
+        f = QFrame(self)
+        f.setFrameShape(QFrame.StyledPanel)
+        f.setLayout(gl)
+        l.addWidget(f)
+        l.addStretch()  # Causes the bottom of the layout to push the rest upwards
+        self.setLayout(l)
+
+    def getSetting(self) -> dict:
+        return dict(
+            targetNA=self.targetNA.value(),
+            referenceNA=self.objectiveNA.value()
+        )
+
+    def loadFromSettings(self, settings: dict):
+        self.targetNA.setValue(settings['targetNA'])
+        self.objectiveNA.setValue(settings['referenceNA'])
+
+    def _setupObjectivePanel(self) -> QGridLayout:
         self.objectiveD = QDoubleSpinBox(self)
         self.objectiveNA = QDoubleSpinBox(self)
         self.objectiveX = QDoubleSpinBox(self)
@@ -94,7 +157,7 @@ class FittingWidget(QFrame):
         gl.addWidget(self.measureObjectiveButton, 4, 0, 1, 3)
         return gl
 
-    def setupMeasurePanel(self) -> QGridLayout:
+    def _setupMeasurePanel(self) -> QGridLayout:
         self.measD = QDoubleSpinBox(self)
         self.measNA = QLabel('0', self)
         self.measNA.setFont(QFont('Arial', pointSize=18))
@@ -169,7 +232,7 @@ class FittingWidget(QFrame):
         gl.addWidget(self.measureApertureCheckbox, 4, 0, 1, 3)
         return gl
 
-    def setupTargetPanel(self) -> QGridLayout:
+    def _setupTargetPanel(self) -> QGridLayout:
         self.targetD = QDoubleSpinBox(self)
         self.targetNA = QDoubleSpinBox(self)
         self.targetX = QDoubleSpinBox(self)
@@ -250,59 +313,3 @@ class FittingWidget(QFrame):
         gl.addWidget(overlayColorPatch, 3, 2, 1, 1)
         gl.addWidget(self.centerTargetButton, 4, 0, 1, 3)
         return gl
-
-
-
-    def __init__(self, parent: Window = None):
-        super().__init__(parent)
-        self.parentWindow = parent
-        self.setFrameShape(QFrame.StyledPanel)
-
-        self._naPerPix = 0
-
-        transparency = 170  # 255 would be solid, 0 would be invisible
-        blue = QColor(0, 0, 255, alpha=transparency)
-        green = QColor(0, 255, 0, alpha=transparency)
-        red = QColor(255, 0, 0, alpha=transparency)
-
-        self.objectiveOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QPen(blue), 0, 0, 0)
-        self.targetOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QPen(green), 0, 0, 0)
-        self.measuredOverlay = CircleCenterOverlay(QtCore.Qt.NoBrush, QPen(red), 0, 0, 0)
-        parent.cameraView.addOverlay(self.objectiveOverlay)
-        parent.cameraView.addOverlay(self.targetOverlay)
-        parent.cameraView.addOverlay(self.measuredOverlay)
-
-        l = QVBoxLayout()
-        l.setAlignment(QtCore.Qt.AlignTop)
-        lab = QLabel("Reference:")
-        f = lab.font()
-        f.setBold(True)
-        lab.setFont(f)
-        l.addWidget(lab)
-        gl = self.setupObjectivePanel()
-        f = QFrame(self)
-        f.setFrameShape(QFrame.StyledPanel)
-        f.setLayout(gl)
-        l.addWidget(f)
-        lab = QLabel("Target:")
-        f = lab.font()
-        f.setBold(True)
-        lab.setFont(f)
-        l.addWidget(lab)
-        gl = self.setupTargetPanel()
-        f = QFrame(self)
-        f.setFrameShape(QFrame.StyledPanel)
-        f.setLayout(gl)
-        l.addWidget(f)
-        lab = QLabel("Measured:")
-        f = lab.font()
-        f.setBold(True)
-        lab.setFont(f)
-        l.addWidget(lab)
-        gl = self.setupMeasurePanel()
-        f = QFrame(self)
-        f.setFrameShape(QFrame.StyledPanel)
-        f.setLayout(gl)
-        l.addWidget(f)
-        l.addStretch()  # Causes the bottom of the layout to push the rest upwards
-        self.setLayout(l)

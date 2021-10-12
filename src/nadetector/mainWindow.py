@@ -63,13 +63,13 @@ class Window(QMainWindow):
         main_area.setLayout(QGridLayout())
         button_area = QWidget()
         button_area.setLayout(QHBoxLayout())
-        fittingWidget = FittingWidget(self)
+        self.fittingWidget = FittingWidget(self)
 
         # Fill Layouts
         l: QGridLayout = main_area.layout()
         l.addWidget(self.arWidget, 0, 0)
         l.addWidget(button_area, 1, 0)
-        l.addWidget(fittingWidget, 0, 1, 2, 1)
+        l.addWidget(self.fittingWidget, 0, 1, 2, 1)
         l.setRowStretch(0, 1)
 
         l = button_area.layout()
@@ -81,3 +81,9 @@ class Window(QMainWindow):
 
         # Attach some child widgets directly
         self.setCentralWidget(main_area)
+
+    def getSettings(self) -> dict:
+        return self.fittingWidget.getSetting()
+
+    def loadSettings(self, settings: dict):
+        self.fittingWidget.loadFromSettings(settings)
