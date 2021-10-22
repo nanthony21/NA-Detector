@@ -3,11 +3,13 @@ from nadetector.hardware import TestCamera
 from nadetector.app import App
 import sys
 import os
+from nadetector._resources import driverPath
+
 
 def main():
-    os.environ['PATH'] += ';' + os.path.join(os.path.dirname(__file__), 'drivers')  # This makes is so that the Camera driver DLL can be found.
+    os.environ['PATH'] += ';' + str(driverPath)  # This makes is so that the Camera driver DLL can be found.
 
-    test: bool = True  # If true then use a simulated camera.
+    test: bool = False  # If true then use a simulated camera.
 
     def tracefunc(frame, event, arg, indent=[0]):
         if event == "call":

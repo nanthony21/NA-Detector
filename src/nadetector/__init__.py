@@ -1,1 +1,1 @@
-# TODO allow zooming in and out, crop the unused edges of the image.
+__version__ = '0.0.3'  # TODO use setuptools_scm

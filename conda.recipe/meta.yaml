@@ -1,7 +1,7 @@
 
 package:
   name: nadetector
-  version: 0.0.1
+  version: 0.0.3
 
 source:
   path: .. #tells conda-build that the source code is in the parent directory.

@@ -5,7 +5,8 @@
         {
             "name": "PWS NA Detector",
             "pyscript": "${PYTHON_SCRIPTS}/nadetector-script.py",
-            "workdir": "${USERPROFILE}"
+            "workdir": "${USERPROFILE}",
+            "icon": "${PREFIX}/Menu/icon.ico"
         }
     ]
 }
